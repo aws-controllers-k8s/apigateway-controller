@@ -1,0 +1,19 @@
+apiVersion: apigateway.services.k8s.aws/v1alpha1
+kind: Integration
+metadata:
+  name: $INTEGRATION_NAME
+spec:
+  restAPIRef:
+    from:
+      name: $REST_API_REF_NAME
+  resourceRef:
+    from:
+      name: $RESOURCE_REF_NAME
+  httpMethod: GET
+  integrationHTTPMethod: GET
+  timeoutInMillis: 101
+  integrationMethod: GET
+  type_: HTTP
+  uri: https://$INTEGRATION_NAME.com
+  requestTemplates:
+    application/json: '{"$schema": "http://json-schema.org/draft-04/schema#", "title": "Empty Schema", "type": "object"}'

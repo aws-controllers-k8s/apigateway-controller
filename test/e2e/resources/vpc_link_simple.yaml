@@ -1,0 +1,11 @@
+apiVersion: apigateway.services.k8s.aws/v1alpha1
+kind: VPCLink
+metadata:
+  name: $VPC_LINK_NAME
+spec:
+  name: $VPC_LINK_NAME
+  tags:
+    k1: v1
+    k2: v2
+  targetARNs:
+    - $NLB_TARGET_ARN

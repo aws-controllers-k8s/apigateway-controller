@@ -192,11 +192,11 @@ const (
 	UnauthorizedCacheControlHeaderStrategy_SUCCEED_WITHOUT_RESPONSE_HEADER UnauthorizedCacheControlHeaderStrategy = "SUCCEED_WITHOUT_RESPONSE_HEADER"
 )
 
-type VPCLinkStatus string
+type VPCLinkStatus_SDK string
 
 const (
-	VPCLinkStatus_AVAILABLE VPCLinkStatus = "AVAILABLE"
-	VPCLinkStatus_PENDING   VPCLinkStatus = "PENDING"
-	VPCLinkStatus_DELETING  VPCLinkStatus = "DELETING"
-	VPCLinkStatus_FAILED    VPCLinkStatus = "FAILED"
+	VPCLinkStatus_SDK_AVAILABLE VPCLinkStatus_SDK = "AVAILABLE"
+	VPCLinkStatus_SDK_PENDING   VPCLinkStatus_SDK = "PENDING"
+	VPCLinkStatus_SDK_DELETING  VPCLinkStatus_SDK = "DELETING"
+	VPCLinkStatus_SDK_FAILED    VPCLinkStatus_SDK = "FAILED"
 )

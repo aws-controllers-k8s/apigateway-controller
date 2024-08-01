@@ -1,0 +1,16 @@
+apiVersion: apigateway.services.k8s.aws/v1alpha1
+kind: Stage
+metadata:
+  name: $STAGE_NAME
+spec:
+  restAPIRef:
+    from:
+      name: $REST_API_REF_NAME
+  stageName: $STAGE_NAME
+  deploymentID: $DEPLOYMENT_ID
+  tags:
+    k1: v1
+    k2: v2
+  variables:
+    v1: value1
+    v2: value2

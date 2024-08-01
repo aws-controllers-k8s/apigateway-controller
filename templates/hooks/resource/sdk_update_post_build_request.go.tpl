@@ -1,0 +1,1 @@
+    updateResourceInput(desired, input, delta)

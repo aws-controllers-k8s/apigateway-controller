@@ -1,17 +1,185 @@
+operations:
+  PutIntegration:
+    operation_type:
+      - Create
+    resource_name: Integration
 ignore:
   resource_names:
-      - ApiKey
-      - Authorizer
-      - BasePathMapping
-      - Deployment
-      - DocumentationPart
-      - DocumentationVersion
-      - DomainName
-      - Model
-      - RequestValidator
-      - Resource
-      - RestApi
-      - Stage
-      - UsagePlan
-      - UsagePlanKey
-      - VpcLink
+    - ApiKey
+    - Authorizer
+    - BasePathMapping
+    - Deployment
+    - DocumentationPart
+    - DocumentationVersion
+    - DomainName
+    - Model
+    - RequestValidator
+#    - Resource
+#    - RestApi
+#    - Stage
+    - UsagePlan
+    - UsagePlanKey
+#    - VpcLink
+
+  field_paths:
+    - Resource.ResourceMethods
+resources:
+  VpcLink:
+    fields:
+      ID:
+        is_primary_key: true
+      TargetARNs:
+        is_immutable: true
+    hooks:
+      sdk_update_pre_build_request:
+        template_path: hooks/vpc_link/sdk_update_pre_build_request.go.tpl
+      sdk_update_post_build_request:
+        template_path: hooks/vpc_link/sdk_update_post_build_request.go.tpl
+      sdk_delete_pre_build_request:
+        template_path: hooks/vpc_link/sdk_delete_pre_build_request.go.tpl
+    renames:
+      operations:
+        GetVpcLink:
+          input_fields:
+            VpcLinkId: Id
+        UpdateVpcLink:
+          input_fields:
+            VpcLinkId: Id
+        DeleteVpcLink:
+          input_fields:
+            VpcLinkId: Id
+    synced:
+      when:
+        - path: Status.Status
+          in:
+            - AVAILABLE
+  # A PutRestApi call exists that allows updating an existing API with an input of external API definitions. Support for
+  # this will be added based on customer interest.
+  RestApi:
+    fields:
+      ID:
+        is_primary_key: true
+      EndpointConfiguration.VPCEndpointIDs:
+        references:
+          resource: VPCEndpoint
+          service_name: ec2
+          path: Status.VPCEndpointID
+    renames:
+      operations:
+        GetRestApi:
+          input_fields:
+            RestApiId: Id
+        UpdateRestApi:
+          input_fields:
+            RestApiId: Id
+        DeleteRestApi:
+          input_fields:
+            RestApiId: Id
+    hooks:
+      sdk_update_pre_build_request:
+        template_path: hooks/rest_api/sdk_update_pre_build_request.go.tpl
+      sdk_update_post_build_request:
+        template_path: hooks/rest_api/sdk_update_post_build_request.go.tpl
+      delta_pre_compare:
+        code: customPreCompare(a, b)
+    exceptions:
+      terminal_codes:
+        - BadRequestException
+        - ConflictException
+        - NotFoundException
+        - InvalidParameter
+  Resource:
+    tags:
+      ignore: true
+    fields:
+      ID:
+        is_primary_key: true
+      ParentID:
+        references:
+          resource: Resource
+          path: Status.ID
+      RestAPIID:
+        references:
+          resource: RestAPI
+          path: Status.ID
+    hooks:
+      sdk_update_post_build_request:
+        template_path: hooks/resource/sdk_update_post_build_request.go.tpl
+    renames:
+      operations:
+        GetResource:
+          input_fields:
+            ResourceId: Id
+        UpdateResource:
+          input_fields:
+            ResourceId: Id
+        DeleteResource:
+          input_fields:
+            ResourceId: Id
+    exceptions:
+      terminal_codes:
+        - BadRequestException
+        - ConflictException
+        - NotFoundException
+        - InvalidParameter
+  Integration:
+    fields:
+      ResourceID:
+        is_primary_key: true
+        references:
+          resource: Resource
+          path: Status.ID
+      RestAPIID:
+        references:
+          resource: RestAPI
+          path: Status.ID
+        is_required: true
+      HttpMethod:
+        is_required: true
+      Type:
+        is_immutable: true
+      ConnectionID:
+        references:
+          resource: VPCLink
+          path: Status.ID
+    tags:
+      ignore: true
+    hooks:
+      sdk_update_post_build_request:
+        template_path: hooks/integration/sdk_update_post_build_request.go.tpl
+      delta_pre_compare:
+        code: customPreCompare(a, b)
+    exceptions:
+      terminal_codes:
+        - BadRequestException
+        - ConflictException
+        - NotFoundException
+        - InvalidParameter
+  # Fields AccessLogSettings and ClientCertificateId are not in the Create API. Support for them will be added based on
+  # customer interest.
+  Stage:
+    fields:
+      RestAPIID:
+        references:
+          resource: RestAPI
+          path: Status.ID
+        is_required: true
+    synced:
+      when:
+        - path: Status.CacheClusterStatus
+          in:
+            - AVAILABLE
+            - NOT_AVAILABLE
+    hooks:
+      sdk_update_pre_build_request:
+        template_path: hooks/stage/sdk_update_pre_build_request.go.tpl
+      sdk_update_post_build_request:
+        template_path: hooks/stage/sdk_update_post_build_request.go.tpl
+      delta_pre_compare:
+        code: customPreCompare(a, b)
+    exceptions:
+      terminal_codes:
+        - BadRequestException
+        - ConflictException
+        - NotFoundException
+        - InvalidParameter

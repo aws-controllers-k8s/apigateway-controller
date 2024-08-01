@@ -27,3 +27,206 @@ var (
 	_ = &aws.JSONValue{}
 	_ = ackv1alpha1.AWSAccountID("")
 )
+
+// API stage name of the associated API stage in a usage plan.
+type APIStage struct {
+	APIID *string `json:"apiID,omitempty"`
+	Stage *string `json:"stage,omitempty"`
+}
+
+// Access log settings, including the access log format and access log destination
+// ARN.
+type AccessLogSettings struct {
+	DestinationARN *string `json:"destinationARN,omitempty"`
+	Format         *string `json:"format,omitempty"`
+}
+
+// Configuration settings of a canary deployment.
+type CanarySettings struct {
+	DeploymentID           *string            `json:"deploymentID,omitempty"`
+	PercentTraffic         *float64           `json:"percentTraffic,omitempty"`
+	StageVariableOverrides map[string]*string `json:"stageVariableOverrides,omitempty"`
+	UseStageCache          *bool              `json:"useStageCache,omitempty"`
+}
+
+// The input configuration for a canary deployment.
+type DeploymentCanarySettings struct {
+	PercentTraffic         *float64           `json:"percentTraffic,omitempty"`
+	StageVariableOverrides map[string]*string `json:"stageVariableOverrides,omitempty"`
+	UseStageCache          *bool              `json:"useStageCache,omitempty"`
+}
+
+// Specifies the target API entity to which the documentation applies.
+type DocumentationPartLocation struct {
+	Method *string `json:"method,omitempty"`
+	Name   *string `json:"name,omitempty"`
+	Path   *string `json:"path,omitempty"`
+}
+
+// The endpoint configuration to indicate the types of endpoints an API (RestApi)
+// or its custom domain name (DomainName) has.
+type EndpointConfiguration struct {
+	Types          []*string `json:"types,omitempty"`
+	VPCEndpointIDs []*string `json:"vpcEndpointIDs,omitempty"`
+	// Reference field for VPCEndpointIDs
+	VPCEndpointRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcEndpointRefs,omitempty"`
+}
+
+// Represents an integration response. The status code must map to an existing
+// MethodResponse, and parameters and templates can be used to transform the
+// back-end response.
+type IntegrationResponse struct {
+	ContentHandling    *string            `json:"contentHandling,omitempty"`
+	ResponseParameters map[string]*string `json:"responseParameters,omitempty"`
+	ResponseTemplates  map[string]*string `json:"responseTemplates,omitempty"`
+	SelectionPattern   *string            `json:"selectionPattern,omitempty"`
+	// The status code.
+	StatusCode *string `json:"statusCode,omitempty"`
+}
+
+// Specifies the method setting properties.
+type MethodSetting struct {
+	CacheDataEncrypted                     *bool    `json:"cacheDataEncrypted,omitempty"`
+	CacheTTLInSeconds                      *int64   `json:"cacheTTLInSeconds,omitempty"`
+	CachingEnabled                         *bool    `json:"cachingEnabled,omitempty"`
+	DataTraceEnabled                       *bool    `json:"dataTraceEnabled,omitempty"`
+	LoggingLevel                           *string  `json:"loggingLevel,omitempty"`
+	MetricsEnabled                         *bool    `json:"metricsEnabled,omitempty"`
+	RequireAuthorizationForCacheControl    *bool    `json:"requireAuthorizationForCacheControl,omitempty"`
+	ThrottlingBurstLimit                   *int64   `json:"throttlingBurstLimit,omitempty"`
+	ThrottlingRateLimit                    *float64 `json:"throttlingRateLimit,omitempty"`
+	UnauthorizedCacheControlHeaderStrategy *string  `json:"unauthorizedCacheControlHeaderStrategy,omitempty"`
+}
+
+// Represents a summary of a Method resource, given a particular date and time.
+type MethodSnapshot struct {
+	APIKeyRequired    *bool   `json:"apiKeyRequired,omitempty"`
+	AuthorizationType *string `json:"authorizationType,omitempty"`
+}
+
+// The mutual TLS authentication configuration for a custom domain name. If
+// specified, API Gateway performs two-way authentication between the client
+// and the server. Clients must present a trusted certificate to access your
+// API.
+type MutualTLSAuthentication struct {
+	TruststoreURI      *string   `json:"truststoreURI,omitempty"`
+	TruststoreVersion  *string   `json:"truststoreVersion,omitempty"`
+	TruststoreWarnings []*string `json:"truststoreWarnings,omitempty"`
+}
+
+// The mutual TLS authentication configuration for a custom domain name. If
+// specified, API Gateway performs two-way authentication between the client
+// and the server. Clients must present a trusted certificate to access your
+// API.
+type MutualTLSAuthenticationInput struct {
+	TruststoreURI     *string `json:"truststoreURI,omitempty"`
+	TruststoreVersion *string `json:"truststoreVersion,omitempty"`
+}
+
+// For more information about supported patch operations, see Patch Operations
+// (https://docs.aws.amazon.com/apigateway/latest/api/patch-operations.html).
+type PatchOperation struct {
+	From  *string `json:"from,omitempty"`
+	Op    *string `json:"op,omitempty"`
+	Path  *string `json:"path,omitempty"`
+	Value *string `json:"value,omitempty"`
+}
+
+// Quotas configured for a usage plan.
+type QuotaSettings struct {
+	Limit  *int64 `json:"limit,omitempty"`
+	Offset *int64 `json:"offset,omitempty"`
+}
+
+// Represents an API resource.
+type Resource_SDK struct {
+	ID       *string `json:"id,omitempty"`
+	ParentID *string `json:"parentID,omitempty"`
+	Path     *string `json:"path,omitempty"`
+	PathPart *string `json:"pathPart,omitempty"`
+}
+
+// Represents a REST API.
+type RestAPI_SDK struct {
+	APIKeySource              *string      `json:"apiKeySource,omitempty"`
+	BinaryMediaTypes          []*string    `json:"binaryMediaTypes,omitempty"`
+	CreatedDate               *metav1.Time `json:"createdDate,omitempty"`
+	Description               *string      `json:"description,omitempty"`
+	DisableExecuteAPIEndpoint *bool        `json:"disableExecuteAPIEndpoint,omitempty"`
+	// The endpoint configuration to indicate the types of endpoints an API (RestApi)
+	// or its custom domain name (DomainName) has.
+	EndpointConfiguration  *EndpointConfiguration `json:"endpointConfiguration,omitempty"`
+	ID                     *string                `json:"id,omitempty"`
+	MinimumCompressionSize *int64                 `json:"minimumCompressionSize,omitempty"`
+	Name                   *string                `json:"name,omitempty"`
+	Policy                 *string                `json:"policy,omitempty"`
+	RootResourceID         *string                `json:"rootResourceID,omitempty"`
+	Tags                   map[string]*string     `json:"tags,omitempty"`
+	Version                *string                `json:"version,omitempty"`
+	Warnings               []*string              `json:"warnings,omitempty"`
+}
+
+// A configuration property of an SDK type.
+type SDKConfigurationProperty struct {
+	DefaultValue *string `json:"defaultValue,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	FriendlyName *string `json:"friendlyName,omitempty"`
+	Name         *string `json:"name,omitempty"`
+	Required     *bool   `json:"required,omitempty"`
+}
+
+// A reference to a unique stage identified in the format {restApiId}/{stage}.
+type StageKey struct {
+	RestAPIID *string `json:"restAPIID,omitempty"`
+	StageName *string `json:"stageName,omitempty"`
+}
+
+// Represents a unique identifier for a version of a deployed RestApi that is
+// callable by users.
+type Stage_SDK struct {
+	// Access log settings, including the access log format and access log destination
+	// ARN.
+	AccessLogSettings   *AccessLogSettings `json:"accessLogSettings,omitempty"`
+	CacheClusterEnabled *bool              `json:"cacheClusterEnabled,omitempty"`
+	// Returns the size of the CacheCluster.
+	CacheClusterSize *string `json:"cacheClusterSize,omitempty"`
+	// Returns the status of the CacheCluster.
+	CacheClusterStatus *string `json:"cacheClusterStatus,omitempty"`
+	// Configuration settings of a canary deployment.
+	CanarySettings       *CanarySettings           `json:"canarySettings,omitempty"`
+	ClientCertificateID  *string                   `json:"clientCertificateID,omitempty"`
+	CreatedDate          *metav1.Time              `json:"createdDate,omitempty"`
+	DeploymentID         *string                   `json:"deploymentID,omitempty"`
+	Description          *string                   `json:"description,omitempty"`
+	DocumentationVersion *string                   `json:"documentationVersion,omitempty"`
+	LastUpdatedDate      *metav1.Time              `json:"lastUpdatedDate,omitempty"`
+	MethodSettings       map[string]*MethodSetting `json:"methodSettings,omitempty"`
+	StageName            *string                   `json:"stageName,omitempty"`
+	Tags                 map[string]*string        `json:"tags,omitempty"`
+	TracingEnabled       *bool                     `json:"tracingEnabled,omitempty"`
+	Variables            map[string]*string        `json:"variables,omitempty"`
+	WebACLARN            *string                   `json:"webACLARN,omitempty"`
+}
+
+// Specifies the TLS configuration for an integration.
+type TLSConfig struct {
+	InsecureSkipVerification *bool `json:"insecureSkipVerification,omitempty"`
+}
+
+// The API request rate limits.
+type ThrottleSettings struct {
+	BurstLimit *int64   `json:"burstLimit,omitempty"`
+	RateLimit  *float64 `json:"rateLimit,omitempty"`
+}
+
+// An API Gateway VPC link for a RestApi to access resources in an Amazon Virtual
+// Private Cloud (VPC).
+type UpdateVPCLinkOutput struct {
+	Description   *string            `json:"description,omitempty"`
+	ID            *string            `json:"id,omitempty"`
+	Name          *string            `json:"name,omitempty"`
+	Status        *string            `json:"status,omitempty"`
+	StatusMessage *string            `json:"statusMessage,omitempty"`
+	Tags          map[string]*string `json:"tags,omitempty"`
+	TargetARNs    []*string          `json:"targetARNs,omitempty"`
+}

@@ -2,3 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - common
+  - bases/apigateway.services.k8s.aws_integrations.yaml
+  - bases/apigateway.services.k8s.aws_resources.yaml
+  - bases/apigateway.services.k8s.aws_restapis.yaml
+  - bases/apigateway.services.k8s.aws_stages.yaml
+  - bases/apigateway.services.k8s.aws_vpclinks.yaml

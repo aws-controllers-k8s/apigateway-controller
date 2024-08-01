@@ -1,0 +1,10 @@
+apiVersion: apigateway.services.k8s.aws/v1alpha1
+kind: Resource
+metadata:
+  name: $RESOURCE_NAME
+spec:
+  parentID: $PARENT_ID
+  pathPart: test-path
+  restAPIRef:
+    from:
+      name: $REST_API_REF_NAME

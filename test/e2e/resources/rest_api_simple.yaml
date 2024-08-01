@@ -1,0 +1,10 @@
+apiVersion: apigateway.services.k8s.aws/v1alpha1
+kind: RestAPI
+metadata:
+  name: $REST_API_NAME
+spec:
+  name: $REST_API_NAME
+  description: "Integration test"
+  tags:
+    k1: v1
+    k2: v2

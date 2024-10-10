@@ -55,6 +55,7 @@ rules:
   - ""
   resources:
   - configmaps
+  - secrets
   verbs:
   - get
   - list
@@ -69,97 +70,12 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - patch
-  - watch
-- apiGroups:
   - apigateway.services.k8s.aws
   resources:
   - integrations
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apigateway.services.k8s.aws
-  resources:
-  - integrations/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - apigateway.services.k8s.aws
-  resources:
   - resources
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apigateway.services.k8s.aws
-  resources:
-  - resources/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - apigateway.services.k8s.aws
-  resources:
   - restapis
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apigateway.services.k8s.aws
-  resources:
-  - restapis/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - apigateway.services.k8s.aws
-  resources:
   - stages
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apigateway.services.k8s.aws
-  resources:
-  - stages/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - apigateway.services.k8s.aws
-  resources:
   - vpclinks
   verbs:
   - create
@@ -172,6 +88,10 @@ rules:
 - apiGroups:
   - apigateway.services.k8s.aws
   resources:
+  - integrations/status
+  - resources/status
+  - restapis/status
+  - stages/status
   - vpclinks/status
   verbs:
   - get
@@ -181,12 +101,6 @@ rules:
   - ec2.services.k8s.aws
   resources:
   - vpcendpoints
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - ec2.services.k8s.aws
-  resources:
   - vpcendpoints/status
   verbs:
   - get
@@ -195,25 +109,6 @@ rules:
   - services.k8s.aws
   resources:
   - adoptedresources
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - services.k8s.aws
-  resources:
-  - adoptedresources/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - services.k8s.aws
-  resources:
   - fieldexports
   verbs:
   - create
@@ -226,6 +121,7 @@ rules:
 - apiGroups:
   - services.k8s.aws
   resources:
+  - adoptedresources/status
   - fieldexports/status
   verbs:
   - get

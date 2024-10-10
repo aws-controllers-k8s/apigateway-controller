@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.2
   name: integrations.apigateway.services.k8s.aws
 spec:
   group: apigateway.services.k8s.aws
@@ -40,7 +40,6 @@ spec:
             description: |-
               IntegrationSpec defines the desired state of Integration.
 
-
               Represents an HTTP, HTTP_PROXY, AWS, AWS_PROXY, or Mock integration.
             properties:
               cacheKeyParameters:
@@ -66,7 +65,7 @@ spec:
               connectionRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference\ntype to provide more user friendly syntax
-                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\n\tfrom:\n\t
+                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
                   \ name: my-api"
                 properties:
                   from:
@@ -91,7 +90,6 @@ spec:
                 description: |-
                   Specifies how to handle request payload content type conversions. Supported
                   values are CONVERT_TO_BINARY and CONVERT_TO_TEXT, with the following behaviors:
-
 
                   If this property is not defined, the request payload will be passed through
                   from the method request to integration request without modification, provided
@@ -141,7 +139,7 @@ spec:
               resourceRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference\ntype to provide more user friendly syntax
-                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\n\tfrom:\n\t
+                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
                   \ name: my-api"
                 properties:
                   from:
@@ -161,7 +159,7 @@ spec:
               restAPIRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference\ntype to provide more user friendly syntax
-                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\n\tfrom:\n\t
+                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
                   \ name: my-api"
                 properties:
                   from:
@@ -214,6 +212,7 @@ spec:
                 type: string
             required:
             - httpMethod
+            - type
             type: object
           status:
             description: IntegrationStatus defines the observed state of Integration
@@ -232,7 +231,6 @@ spec:
                       when it has verified that an "adopted" resource (a resource where the
                       ARN annotation was set by the Kubernetes user on the CR) exists and
                       matches the supplied CR's Spec field values.
-                      TODO(vijat@): Find a better strategy for resources that do not have ARN in CreateOutputResponse
                       https://github.com/aws/aws-controllers-k8s/issues/270
                     type: string
                   ownerAccountID:

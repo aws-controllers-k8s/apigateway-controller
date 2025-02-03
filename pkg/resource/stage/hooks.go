@@ -30,6 +30,7 @@ import (
 var syncTags = tags.SyncTags
 
 func arnForResource(desired *svcapitypes.Stage) (string, error) {
+
 	return util.ARNForResource(desired.Status.ACKResourceMetadata,
 		fmt.Sprintf("/restapis/%s/stages/%s", *desired.Spec.RestAPIID, *desired.Spec.StageName))
 }

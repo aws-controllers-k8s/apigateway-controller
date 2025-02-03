@@ -15,7 +15,7 @@ package resource
 
 import (
 	"github.com/aws-controllers-k8s/runtime/pkg/compare"
-	svcsdk "github.com/aws/aws-sdk-go/service/apigateway"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/apigateway"
 
 	"github.com/aws-controllers-k8s/apigateway-controller/pkg/util/patch"
 )

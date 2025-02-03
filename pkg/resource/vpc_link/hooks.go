@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	"github.com/aws-controllers-k8s/runtime/pkg/compare"
-	"github.com/aws/aws-sdk-go/service/apigateway"
+	"github.com/aws/aws-sdk-go-v2/service/apigateway"
 
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 

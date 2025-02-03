@@ -63,6 +63,17 @@ type DocumentationPartLocation struct {
 	Path   *string `json:"path,omitempty"`
 }
 
+// Represents a domain name access association between an access association
+// source and a private custom domain name. With a domain name access association,
+// an access association source can invoke a private custom domain name while
+// isolated from the public internet.
+type DomainNameAccessAssociation struct {
+	AccessAssociationSource        *string            `json:"accessAssociationSource,omitempty"`
+	DomainNameAccessAssociationARN *string            `json:"domainNameAccessAssociationARN,omitempty"`
+	DomainNameARN                  *string            `json:"domainNameARN,omitempty"`
+	Tags                           map[string]*string `json:"tags,omitempty"`
+}
+
 // The endpoint configuration to indicate the types of endpoints an API (RestApi)
 // or its custom domain name (DomainName) has.
 type EndpointConfiguration struct {
@@ -80,6 +91,66 @@ type IntegrationResponse struct {
 	ResponseParameters map[string]*string `json:"responseParameters,omitempty"`
 	ResponseTemplates  map[string]*string `json:"responseTemplates,omitempty"`
 	SelectionPattern   *string            `json:"selectionPattern,omitempty"`
+	// The status code.
+	StatusCode *string `json:"statusCode,omitempty"`
+}
+
+// Represents an HTTP, HTTP_PROXY, AWS, AWS_PROXY, or Mock integration.
+type Integration_SDK struct {
+	CacheKeyParameters   []*string                       `json:"cacheKeyParameters,omitempty"`
+	CacheNamespace       *string                         `json:"cacheNamespace,omitempty"`
+	ConnectionID         *string                         `json:"connectionID,omitempty"`
+	ConnectionType       *string                         `json:"connectionType,omitempty"`
+	ContentHandling      *string                         `json:"contentHandling,omitempty"`
+	Credentials          *string                         `json:"credentials,omitempty"`
+	HTTPMethod           *string                         `json:"httpMethod,omitempty"`
+	IntegrationResponses map[string]*IntegrationResponse `json:"integrationResponses,omitempty"`
+	PassthroughBehavior  *string                         `json:"passthroughBehavior,omitempty"`
+	RequestParameters    map[string]*string              `json:"requestParameters,omitempty"`
+	RequestTemplates     map[string]*string              `json:"requestTemplates,omitempty"`
+	TimeoutInMillis      *int64                          `json:"timeoutInMillis,omitempty"`
+	// Specifies the TLS configuration for an integration.
+	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
+	// The integration type. The valid value is HTTP for integrating an API method
+	// with an HTTP backend; AWS with any Amazon Web Services service endpoints;
+	// MOCK for testing without actually invoking the backend; HTTP_PROXY for integrating
+	// with the HTTP proxy integration; AWS_PROXY for integrating with the Lambda
+	// proxy integration.
+	Type *string `json:"type_,omitempty"`
+	URI  *string `json:"uri,omitempty"`
+}
+
+// Represents a client-facing interface by which the client calls the API to
+// access back-end resources. A Method resource is integrated with an Integration
+// resource. Both consist of a request and one or more responses. The method
+// request takes the client input that is passed to the back end through the
+// integration request. A method response returns the output from the back end
+// to the client through an integration response. A method request is embodied
+// in a Method resource, whereas an integration request is embodied in an Integration
+// resource. On the other hand, a method response is represented by a MethodResponse
+// resource, whereas an integration response is represented by an IntegrationResponse
+// resource.
+type Method struct {
+	APIKeyRequired      *bool     `json:"apiKeyRequired,omitempty"`
+	AuthorizationScopes []*string `json:"authorizationScopes,omitempty"`
+	AuthorizationType   *string   `json:"authorizationType,omitempty"`
+	AuthorizerID        *string   `json:"authorizerID,omitempty"`
+	HTTPMethod          *string   `json:"httpMethod,omitempty"`
+	// Represents an HTTP, HTTP_PROXY, AWS, AWS_PROXY, or Mock integration.
+	MethodIntegration  *Integration_SDK           `json:"methodIntegration,omitempty"`
+	MethodResponses    map[string]*MethodResponse `json:"methodResponses,omitempty"`
+	OperationName      *string                    `json:"operationName,omitempty"`
+	RequestModels      map[string]*string         `json:"requestModels,omitempty"`
+	RequestParameters  map[string]*bool           `json:"requestParameters,omitempty"`
+	RequestValidatorID *string                    `json:"requestValidatorID,omitempty"`
+}
+
+// Represents a method response of a given HTTP status code returned to the
+// client. The method response is passed from the back end through the associated
+// integration response that can be transformed using a mapping template.
+type MethodResponse struct {
+	ResponseModels     map[string]*string `json:"responseModels,omitempty"`
+	ResponseParameters map[string]*bool   `json:"responseParameters,omitempty"`
 	// The status code.
 	StatusCode *string `json:"statusCode,omitempty"`
 }
@@ -221,7 +292,7 @@ type ThrottleSettings struct {
 
 // An API Gateway VPC link for a RestApi to access resources in an Amazon Virtual
 // Private Cloud (VPC).
-type UpdateVPCLinkOutput struct {
+type VPCLink_SDK struct {
 	Description   *string            `json:"description,omitempty"`
 	ID            *string            `json:"id,omitempty"`
 	Name          *string            `json:"name,omitempty"`

@@ -6,8 +6,11 @@ toolchain go1.22.2
 
 require (
 	github.com/aws-controllers-k8s/ec2-controller v1.2.15
-	github.com/aws-controllers-k8s/runtime v0.41.0
+	github.com/aws-controllers-k8s/runtime v0.41.1-0.20250204215244-e48dd7b2d6d0
 	github.com/aws/aws-sdk-go v1.55.0
+	github.com/aws/aws-sdk-go-v2 v1.36.0
+	github.com/aws/aws-sdk-go-v2/service/apigateway v1.28.10
+	github.com/aws/smithy-go v1.22.2
 	github.com/go-logr/logr v1.4.2
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
@@ -18,6 +21,8 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.31 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.31 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

@@ -21,6 +21,9 @@ import (
 )
 
 // VpcLinkSpec defines the desired state of VpcLink.
+//
+// An API Gateway VPC link for a RestApi to access resources in an Amazon Virtual
+// Private Cloud (VPC).
 type VPCLinkSpec struct {
 
 	// The description of the VPC link.

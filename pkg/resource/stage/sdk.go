@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/apigateway"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/apigateway"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/apigateway/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.APIGateway{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.Stage{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,14 +75,12 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 
-	var resp *svcsdk.Stage
-	resp, err = rm.sdkapi.GetStageWithContext(ctx, input)
+	var resp *svcsdk.GetStageOutput
+	resp, err = rm.sdkapi.GetStage(ctx, input)
 	rm.metrics.RecordAPICall("READ_ONE", "GetStage", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
-			return nil, ackerr.NotFound
-		}
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NotFoundException" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NotFoundException" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -102,18 +102,14 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Status.AccessLogSettings = nil
 	}
-	if resp.CacheClusterEnabled != nil {
-		ko.Spec.CacheClusterEnabled = resp.CacheClusterEnabled
-	} else {
-		ko.Spec.CacheClusterEnabled = nil
-	}
-	if resp.CacheClusterSize != nil {
-		ko.Spec.CacheClusterSize = resp.CacheClusterSize
+	ko.Spec.CacheClusterEnabled = &resp.CacheClusterEnabled
+	if resp.CacheClusterSize != "" {
+		ko.Spec.CacheClusterSize = aws.String(string(resp.CacheClusterSize))
 	} else {
 		ko.Spec.CacheClusterSize = nil
 	}
-	if resp.CacheClusterStatus != nil {
-		ko.Status.CacheClusterStatus = resp.CacheClusterStatus
+	if resp.CacheClusterStatus != "" {
+		ko.Status.CacheClusterStatus = aws.String(string(resp.CacheClusterStatus))
 	} else {
 		ko.Status.CacheClusterStatus = nil
 	}
@@ -122,21 +118,11 @@ func (rm *resourceManager) sdkFind(
 		if resp.CanarySettings.DeploymentId != nil {
 			f4.DeploymentID = resp.CanarySettings.DeploymentId
 		}
-		if resp.CanarySettings.PercentTraffic != nil {
-			f4.PercentTraffic = resp.CanarySettings.PercentTraffic
-		}
+		f4.PercentTraffic = &resp.CanarySettings.PercentTraffic
 		if resp.CanarySettings.StageVariableOverrides != nil {
-			f4f2 := map[string]*string{}
-			for f4f2key, f4f2valiter := range resp.CanarySettings.StageVariableOverrides {
-				var f4f2val string
-				f4f2val = *f4f2valiter
-				f4f2[f4f2key] = &f4f2val
-			}
-			f4.StageVariableOverrides = f4f2
+			f4.StageVariableOverrides = aws.StringMap(resp.CanarySettings.StageVariableOverrides)
 		}
-		if resp.CanarySettings.UseStageCache != nil {
-			f4.UseStageCache = resp.CanarySettings.UseStageCache
-		}
+		f4.UseStageCache = &resp.CanarySettings.UseStageCache
 		ko.Spec.CanarySettings = f4
 	} else {
 		ko.Spec.CanarySettings = nil
@@ -175,35 +161,21 @@ func (rm *resourceManager) sdkFind(
 		f11 := map[string]*svcapitypes.MethodSetting{}
 		for f11key, f11valiter := range resp.MethodSettings {
 			f11val := &svcapitypes.MethodSetting{}
-			if f11valiter.CacheDataEncrypted != nil {
-				f11val.CacheDataEncrypted = f11valiter.CacheDataEncrypted
-			}
-			if f11valiter.CacheTtlInSeconds != nil {
-				f11val.CacheTTLInSeconds = f11valiter.CacheTtlInSeconds
-			}
-			if f11valiter.CachingEnabled != nil {
-				f11val.CachingEnabled = f11valiter.CachingEnabled
-			}
-			if f11valiter.DataTraceEnabled != nil {
-				f11val.DataTraceEnabled = f11valiter.DataTraceEnabled
-			}
+			f11val.CacheDataEncrypted = &f11valiter.CacheDataEncrypted
+			cacheTTLInSecondsCopy := int64(f11valiter.CacheTtlInSeconds)
+			f11val.CacheTTLInSeconds = &cacheTTLInSecondsCopy
+			f11val.CachingEnabled = &f11valiter.CachingEnabled
+			f11val.DataTraceEnabled = &f11valiter.DataTraceEnabled
 			if f11valiter.LoggingLevel != nil {
 				f11val.LoggingLevel = f11valiter.LoggingLevel
 			}
-			if f11valiter.MetricsEnabled != nil {
-				f11val.MetricsEnabled = f11valiter.MetricsEnabled
-			}
-			if f11valiter.RequireAuthorizationForCacheControl != nil {
-				f11val.RequireAuthorizationForCacheControl = f11valiter.RequireAuthorizationForCacheControl
-			}
-			if f11valiter.ThrottlingBurstLimit != nil {
-				f11val.ThrottlingBurstLimit = f11valiter.ThrottlingBurstLimit
-			}
-			if f11valiter.ThrottlingRateLimit != nil {
-				f11val.ThrottlingRateLimit = f11valiter.ThrottlingRateLimit
-			}
-			if f11valiter.UnauthorizedCacheControlHeaderStrategy != nil {
-				f11val.UnauthorizedCacheControlHeaderStrategy = f11valiter.UnauthorizedCacheControlHeaderStrategy
+			f11val.MetricsEnabled = &f11valiter.MetricsEnabled
+			f11val.RequireAuthorizationForCacheControl = &f11valiter.RequireAuthorizationForCacheControl
+			throttlingBurstLimitCopy := int64(f11valiter.ThrottlingBurstLimit)
+			f11val.ThrottlingBurstLimit = &throttlingBurstLimitCopy
+			f11val.ThrottlingRateLimit = &f11valiter.ThrottlingRateLimit
+			if f11valiter.UnauthorizedCacheControlHeaderStrategy != "" {
+				f11val.UnauthorizedCacheControlHeaderStrategy = aws.String(string(f11valiter.UnauthorizedCacheControlHeaderStrategy))
 			}
 			f11[f11key] = f11val
 		}
@@ -217,29 +189,13 @@ func (rm *resourceManager) sdkFind(
 		ko.Spec.StageName = nil
 	}
 	if resp.Tags != nil {
-		f13 := map[string]*string{}
-		for f13key, f13valiter := range resp.Tags {
-			var f13val string
-			f13val = *f13valiter
-			f13[f13key] = &f13val
-		}
-		ko.Spec.Tags = f13
+		ko.Spec.Tags = aws.StringMap(resp.Tags)
 	} else {
 		ko.Spec.Tags = nil
 	}
-	if resp.TracingEnabled != nil {
-		ko.Spec.TracingEnabled = resp.TracingEnabled
-	} else {
-		ko.Spec.TracingEnabled = nil
-	}
+	ko.Spec.TracingEnabled = &resp.TracingEnabled
 	if resp.Variables != nil {
-		f15 := map[string]*string{}
-		for f15key, f15valiter := range resp.Variables {
-			var f15val string
-			f15val = *f15valiter
-			f15[f15key] = &f15val
-		}
-		ko.Spec.Variables = f15
+		ko.Spec.Variables = aws.StringMap(resp.Variables)
 	} else {
 		ko.Spec.Variables = nil
 	}
@@ -271,10 +227,10 @@ func (rm *resourceManager) newDescribeRequestPayload(
 	res := &svcsdk.GetStageInput{}
 
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 	if r.ko.Spec.StageName != nil {
-		res.SetStageName(*r.ko.Spec.StageName)
+		res.StageName = r.ko.Spec.StageName
 	}
 
 	return res, nil
@@ -297,9 +253,9 @@ func (rm *resourceManager) sdkCreate(
 		return nil, err
 	}
 
-	var resp *svcsdk.Stage
+	var resp *svcsdk.CreateStageOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateStageWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateStage(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateStage", err)
 	if err != nil {
 		return nil, err
@@ -320,18 +276,14 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.AccessLogSettings = nil
 	}
-	if resp.CacheClusterEnabled != nil {
-		ko.Spec.CacheClusterEnabled = resp.CacheClusterEnabled
-	} else {
-		ko.Spec.CacheClusterEnabled = nil
-	}
-	if resp.CacheClusterSize != nil {
-		ko.Spec.CacheClusterSize = resp.CacheClusterSize
+	ko.Spec.CacheClusterEnabled = &resp.CacheClusterEnabled
+	if resp.CacheClusterSize != "" {
+		ko.Spec.CacheClusterSize = aws.String(string(resp.CacheClusterSize))
 	} else {
 		ko.Spec.CacheClusterSize = nil
 	}
-	if resp.CacheClusterStatus != nil {
-		ko.Status.CacheClusterStatus = resp.CacheClusterStatus
+	if resp.CacheClusterStatus != "" {
+		ko.Status.CacheClusterStatus = aws.String(string(resp.CacheClusterStatus))
 	} else {
 		ko.Status.CacheClusterStatus = nil
 	}
@@ -340,21 +292,11 @@ func (rm *resourceManager) sdkCreate(
 		if resp.CanarySettings.DeploymentId != nil {
 			f4.DeploymentID = resp.CanarySettings.DeploymentId
 		}
-		if resp.CanarySettings.PercentTraffic != nil {
-			f4.PercentTraffic = resp.CanarySettings.PercentTraffic
-		}
+		f4.PercentTraffic = &resp.CanarySettings.PercentTraffic
 		if resp.CanarySettings.StageVariableOverrides != nil {
-			f4f2 := map[string]*string{}
-			for f4f2key, f4f2valiter := range resp.CanarySettings.StageVariableOverrides {
-				var f4f2val string
-				f4f2val = *f4f2valiter
-				f4f2[f4f2key] = &f4f2val
-			}
-			f4.StageVariableOverrides = f4f2
+			f4.StageVariableOverrides = aws.StringMap(resp.CanarySettings.StageVariableOverrides)
 		}
-		if resp.CanarySettings.UseStageCache != nil {
-			f4.UseStageCache = resp.CanarySettings.UseStageCache
-		}
+		f4.UseStageCache = &resp.CanarySettings.UseStageCache
 		ko.Spec.CanarySettings = f4
 	} else {
 		ko.Spec.CanarySettings = nil
@@ -393,35 +335,21 @@ func (rm *resourceManager) sdkCreate(
 		f11 := map[string]*svcapitypes.MethodSetting{}
 		for f11key, f11valiter := range resp.MethodSettings {
 			f11val := &svcapitypes.MethodSetting{}
-			if f11valiter.CacheDataEncrypted != nil {
-				f11val.CacheDataEncrypted = f11valiter.CacheDataEncrypted
-			}
-			if f11valiter.CacheTtlInSeconds != nil {
-				f11val.CacheTTLInSeconds = f11valiter.CacheTtlInSeconds
-			}
-			if f11valiter.CachingEnabled != nil {
-				f11val.CachingEnabled = f11valiter.CachingEnabled
-			}
-			if f11valiter.DataTraceEnabled != nil {
-				f11val.DataTraceEnabled = f11valiter.DataTraceEnabled
-			}
+			f11val.CacheDataEncrypted = &f11valiter.CacheDataEncrypted
+			cacheTTLInSecondsCopy := int64(f11valiter.CacheTtlInSeconds)
+			f11val.CacheTTLInSeconds = &cacheTTLInSecondsCopy
+			f11val.CachingEnabled = &f11valiter.CachingEnabled
+			f11val.DataTraceEnabled = &f11valiter.DataTraceEnabled
 			if f11valiter.LoggingLevel != nil {
 				f11val.LoggingLevel = f11valiter.LoggingLevel
 			}
-			if f11valiter.MetricsEnabled != nil {
-				f11val.MetricsEnabled = f11valiter.MetricsEnabled
-			}
-			if f11valiter.RequireAuthorizationForCacheControl != nil {
-				f11val.RequireAuthorizationForCacheControl = f11valiter.RequireAuthorizationForCacheControl
-			}
-			if f11valiter.ThrottlingBurstLimit != nil {
-				f11val.ThrottlingBurstLimit = f11valiter.ThrottlingBurstLimit
-			}
-			if f11valiter.ThrottlingRateLimit != nil {
-				f11val.ThrottlingRateLimit = f11valiter.ThrottlingRateLimit
-			}
-			if f11valiter.UnauthorizedCacheControlHeaderStrategy != nil {
-				f11val.UnauthorizedCacheControlHeaderStrategy = f11valiter.UnauthorizedCacheControlHeaderStrategy
+			f11val.MetricsEnabled = &f11valiter.MetricsEnabled
+			f11val.RequireAuthorizationForCacheControl = &f11valiter.RequireAuthorizationForCacheControl
+			throttlingBurstLimitCopy := int64(f11valiter.ThrottlingBurstLimit)
+			f11val.ThrottlingBurstLimit = &throttlingBurstLimitCopy
+			f11val.ThrottlingRateLimit = &f11valiter.ThrottlingRateLimit
+			if f11valiter.UnauthorizedCacheControlHeaderStrategy != "" {
+				f11val.UnauthorizedCacheControlHeaderStrategy = aws.String(string(f11valiter.UnauthorizedCacheControlHeaderStrategy))
 			}
 			f11[f11key] = f11val
 		}
@@ -435,29 +363,13 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.StageName = nil
 	}
 	if resp.Tags != nil {
-		f13 := map[string]*string{}
-		for f13key, f13valiter := range resp.Tags {
-			var f13val string
-			f13val = *f13valiter
-			f13[f13key] = &f13val
-		}
-		ko.Spec.Tags = f13
+		ko.Spec.Tags = aws.StringMap(resp.Tags)
 	} else {
 		ko.Spec.Tags = nil
 	}
-	if resp.TracingEnabled != nil {
-		ko.Spec.TracingEnabled = resp.TracingEnabled
-	} else {
-		ko.Spec.TracingEnabled = nil
-	}
+	ko.Spec.TracingEnabled = &resp.TracingEnabled
 	if resp.Variables != nil {
-		f15 := map[string]*string{}
-		for f15key, f15valiter := range resp.Variables {
-			var f15val string
-			f15val = *f15valiter
-			f15[f15key] = &f15val
-		}
-		ko.Spec.Variables = f15
+		ko.Spec.Variables = aws.StringMap(resp.Variables)
 	} else {
 		ko.Spec.Variables = nil
 	}
@@ -480,68 +392,50 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateStageInput{}
 
 	if r.ko.Spec.CacheClusterEnabled != nil {
-		res.SetCacheClusterEnabled(*r.ko.Spec.CacheClusterEnabled)
+		res.CacheClusterEnabled = *r.ko.Spec.CacheClusterEnabled
 	}
 	if r.ko.Spec.CacheClusterSize != nil {
-		res.SetCacheClusterSize(*r.ko.Spec.CacheClusterSize)
+		res.CacheClusterSize = svcsdktypes.CacheClusterSize(*r.ko.Spec.CacheClusterSize)
 	}
 	if r.ko.Spec.CanarySettings != nil {
-		f2 := &svcsdk.CanarySettings{}
+		f2 := &svcsdktypes.CanarySettings{}
 		if r.ko.Spec.CanarySettings.DeploymentID != nil {
-			f2.SetDeploymentId(*r.ko.Spec.CanarySettings.DeploymentID)
+			f2.DeploymentId = r.ko.Spec.CanarySettings.DeploymentID
 		}
 		if r.ko.Spec.CanarySettings.PercentTraffic != nil {
-			f2.SetPercentTraffic(*r.ko.Spec.CanarySettings.PercentTraffic)
+			f2.PercentTraffic = *r.ko.Spec.CanarySettings.PercentTraffic
 		}
 		if r.ko.Spec.CanarySettings.StageVariableOverrides != nil {
-			f2f2 := map[string]*string{}
-			for f2f2key, f2f2valiter := range r.ko.Spec.CanarySettings.StageVariableOverrides {
-				var f2f2val string
-				f2f2val = *f2f2valiter
-				f2f2[f2f2key] = &f2f2val
-			}
-			f2.SetStageVariableOverrides(f2f2)
+			f2.StageVariableOverrides = aws.ToStringMap(r.ko.Spec.CanarySettings.StageVariableOverrides)
 		}
 		if r.ko.Spec.CanarySettings.UseStageCache != nil {
-			f2.SetUseStageCache(*r.ko.Spec.CanarySettings.UseStageCache)
+			f2.UseStageCache = *r.ko.Spec.CanarySettings.UseStageCache
 		}
-		res.SetCanarySettings(f2)
+		res.CanarySettings = f2
 	}
 	if r.ko.Spec.DeploymentID != nil {
-		res.SetDeploymentId(*r.ko.Spec.DeploymentID)
+		res.DeploymentId = r.ko.Spec.DeploymentID
 	}
 	if r.ko.Spec.Description != nil {
-		res.SetDescription(*r.ko.Spec.Description)
+		res.Description = r.ko.Spec.Description
 	}
 	if r.ko.Spec.DocumentationVersion != nil {
-		res.SetDocumentationVersion(*r.ko.Spec.DocumentationVersion)
+		res.DocumentationVersion = r.ko.Spec.DocumentationVersion
 	}
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 	if r.ko.Spec.StageName != nil {
-		res.SetStageName(*r.ko.Spec.StageName)
+		res.StageName = r.ko.Spec.StageName
 	}
 	if r.ko.Spec.Tags != nil {
-		f8 := map[string]*string{}
-		for f8key, f8valiter := range r.ko.Spec.Tags {
-			var f8val string
-			f8val = *f8valiter
-			f8[f8key] = &f8val
-		}
-		res.SetTags(f8)
+		res.Tags = aws.ToStringMap(r.ko.Spec.Tags)
 	}
 	if r.ko.Spec.TracingEnabled != nil {
-		res.SetTracingEnabled(*r.ko.Spec.TracingEnabled)
+		res.TracingEnabled = *r.ko.Spec.TracingEnabled
 	}
 	if r.ko.Spec.Variables != nil {
-		f10 := map[string]*string{}
-		for f10key, f10valiter := range r.ko.Spec.Variables {
-			var f10val string
-			f10val = *f10valiter
-			f10[f10key] = &f10val
-		}
-		res.SetVariables(f10)
+		res.Variables = aws.ToStringMap(r.ko.Spec.Variables)
 	}
 
 	return res, nil
@@ -583,9 +477,9 @@ func (rm *resourceManager) sdkUpdate(
 	}
 	updateStageInput(desired, latest, input, delta)
 
-	var resp *svcsdk.Stage
+	var resp *svcsdk.UpdateStageOutput
 	_ = resp
-	resp, err = rm.sdkapi.UpdateStageWithContext(ctx, input)
+	resp, err = rm.sdkapi.UpdateStage(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "UpdateStage", err)
 	if err != nil {
 		return nil, err
@@ -606,18 +500,14 @@ func (rm *resourceManager) sdkUpdate(
 	} else {
 		ko.Status.AccessLogSettings = nil
 	}
-	if resp.CacheClusterEnabled != nil {
-		ko.Spec.CacheClusterEnabled = resp.CacheClusterEnabled
-	} else {
-		ko.Spec.CacheClusterEnabled = nil
-	}
-	if resp.CacheClusterSize != nil {
-		ko.Spec.CacheClusterSize = resp.CacheClusterSize
+	ko.Spec.CacheClusterEnabled = &resp.CacheClusterEnabled
+	if resp.CacheClusterSize != "" {
+		ko.Spec.CacheClusterSize = aws.String(string(resp.CacheClusterSize))
 	} else {
 		ko.Spec.CacheClusterSize = nil
 	}
-	if resp.CacheClusterStatus != nil {
-		ko.Status.CacheClusterStatus = resp.CacheClusterStatus
+	if resp.CacheClusterStatus != "" {
+		ko.Status.CacheClusterStatus = aws.String(string(resp.CacheClusterStatus))
 	} else {
 		ko.Status.CacheClusterStatus = nil
 	}
@@ -626,21 +516,11 @@ func (rm *resourceManager) sdkUpdate(
 		if resp.CanarySettings.DeploymentId != nil {
 			f4.DeploymentID = resp.CanarySettings.DeploymentId
 		}
-		if resp.CanarySettings.PercentTraffic != nil {
-			f4.PercentTraffic = resp.CanarySettings.PercentTraffic
-		}
+		f4.PercentTraffic = &resp.CanarySettings.PercentTraffic
 		if resp.CanarySettings.StageVariableOverrides != nil {
-			f4f2 := map[string]*string{}
-			for f4f2key, f4f2valiter := range resp.CanarySettings.StageVariableOverrides {
-				var f4f2val string
-				f4f2val = *f4f2valiter
-				f4f2[f4f2key] = &f4f2val
-			}
-			f4.StageVariableOverrides = f4f2
+			f4.StageVariableOverrides = aws.StringMap(resp.CanarySettings.StageVariableOverrides)
 		}
-		if resp.CanarySettings.UseStageCache != nil {
-			f4.UseStageCache = resp.CanarySettings.UseStageCache
-		}
+		f4.UseStageCache = &resp.CanarySettings.UseStageCache
 		ko.Spec.CanarySettings = f4
 	} else {
 		ko.Spec.CanarySettings = nil
@@ -679,35 +559,21 @@ func (rm *resourceManager) sdkUpdate(
 		f11 := map[string]*svcapitypes.MethodSetting{}
 		for f11key, f11valiter := range resp.MethodSettings {
 			f11val := &svcapitypes.MethodSetting{}
-			if f11valiter.CacheDataEncrypted != nil {
-				f11val.CacheDataEncrypted = f11valiter.CacheDataEncrypted
-			}
-			if f11valiter.CacheTtlInSeconds != nil {
-				f11val.CacheTTLInSeconds = f11valiter.CacheTtlInSeconds
-			}
-			if f11valiter.CachingEnabled != nil {
-				f11val.CachingEnabled = f11valiter.CachingEnabled
-			}
-			if f11valiter.DataTraceEnabled != nil {
-				f11val.DataTraceEnabled = f11valiter.DataTraceEnabled
-			}
+			f11val.CacheDataEncrypted = &f11valiter.CacheDataEncrypted
+			cacheTTLInSecondsCopy := int64(f11valiter.CacheTtlInSeconds)
+			f11val.CacheTTLInSeconds = &cacheTTLInSecondsCopy
+			f11val.CachingEnabled = &f11valiter.CachingEnabled
+			f11val.DataTraceEnabled = &f11valiter.DataTraceEnabled
 			if f11valiter.LoggingLevel != nil {
 				f11val.LoggingLevel = f11valiter.LoggingLevel
 			}
-			if f11valiter.MetricsEnabled != nil {
-				f11val.MetricsEnabled = f11valiter.MetricsEnabled
-			}
-			if f11valiter.RequireAuthorizationForCacheControl != nil {
-				f11val.RequireAuthorizationForCacheControl = f11valiter.RequireAuthorizationForCacheControl
-			}
-			if f11valiter.ThrottlingBurstLimit != nil {
-				f11val.ThrottlingBurstLimit = f11valiter.ThrottlingBurstLimit
-			}
-			if f11valiter.ThrottlingRateLimit != nil {
-				f11val.ThrottlingRateLimit = f11valiter.ThrottlingRateLimit
-			}
-			if f11valiter.UnauthorizedCacheControlHeaderStrategy != nil {
-				f11val.UnauthorizedCacheControlHeaderStrategy = f11valiter.UnauthorizedCacheControlHeaderStrategy
+			f11val.MetricsEnabled = &f11valiter.MetricsEnabled
+			f11val.RequireAuthorizationForCacheControl = &f11valiter.RequireAuthorizationForCacheControl
+			throttlingBurstLimitCopy := int64(f11valiter.ThrottlingBurstLimit)
+			f11val.ThrottlingBurstLimit = &throttlingBurstLimitCopy
+			f11val.ThrottlingRateLimit = &f11valiter.ThrottlingRateLimit
+			if f11valiter.UnauthorizedCacheControlHeaderStrategy != "" {
+				f11val.UnauthorizedCacheControlHeaderStrategy = aws.String(string(f11valiter.UnauthorizedCacheControlHeaderStrategy))
 			}
 			f11[f11key] = f11val
 		}
@@ -721,29 +587,13 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Spec.StageName = nil
 	}
 	if resp.Tags != nil {
-		f13 := map[string]*string{}
-		for f13key, f13valiter := range resp.Tags {
-			var f13val string
-			f13val = *f13valiter
-			f13[f13key] = &f13val
-		}
-		ko.Spec.Tags = f13
+		ko.Spec.Tags = aws.StringMap(resp.Tags)
 	} else {
 		ko.Spec.Tags = nil
 	}
-	if resp.TracingEnabled != nil {
-		ko.Spec.TracingEnabled = resp.TracingEnabled
-	} else {
-		ko.Spec.TracingEnabled = nil
-	}
+	ko.Spec.TracingEnabled = &resp.TracingEnabled
 	if resp.Variables != nil {
-		f15 := map[string]*string{}
-		for f15key, f15valiter := range resp.Variables {
-			var f15val string
-			f15val = *f15valiter
-			f15[f15key] = &f15val
-		}
-		ko.Spec.Variables = f15
+		ko.Spec.Variables = aws.StringMap(resp.Variables)
 	} else {
 		ko.Spec.Variables = nil
 	}
@@ -767,10 +617,10 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.UpdateStageInput{}
 
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 	if r.ko.Spec.StageName != nil {
-		res.SetStageName(*r.ko.Spec.StageName)
+		res.StageName = r.ko.Spec.StageName
 	}
 
 	return res, nil
@@ -792,7 +642,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteStageOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteStageWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteStage(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteStage", err)
 	return nil, err
 }
@@ -805,10 +655,10 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteStageInput{}
 
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 	if r.ko.Spec.StageName != nil {
-		res.SetStageName(*r.ko.Spec.StageName)
+		res.StageName = r.ko.Spec.StageName
 	}
 
 	return res, nil
@@ -916,11 +766,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case "BadRequestException",
 		"ConflictException",
 		"NotFoundException",

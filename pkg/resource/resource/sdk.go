@@ -28,8 +28,9 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/apigateway"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/apigateway"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +41,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.APIGateway{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.Resource{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +49,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,14 +74,12 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 
-	var resp *svcsdk.Resource
-	resp, err = rm.sdkapi.GetResourceWithContext(ctx, input)
+	var resp *svcsdk.GetResourceOutput
+	resp, err = rm.sdkapi.GetResource(ctx, input)
 	rm.metrics.RecordAPICall("READ_ONE", "GetResource", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
-			return nil, ackerr.NotFound
-		}
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NotFoundException" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NotFoundException" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -121,7 +120,7 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadOneInput(
 	r *resource,
 ) bool {
-	return r.ko.Spec.RestAPIID == nil || r.ko.Status.ID == nil
+	return r.ko.Status.ID == nil || r.ko.Spec.RestAPIID == nil
 
 }
 
@@ -133,10 +132,10 @@ func (rm *resourceManager) newDescribeRequestPayload(
 	res := &svcsdk.GetResourceInput{}
 
 	if r.ko.Status.ID != nil {
-		res.SetResourceId(*r.ko.Status.ID)
+		res.ResourceId = r.ko.Status.ID
 	}
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 
 	return res, nil
@@ -159,9 +158,9 @@ func (rm *resourceManager) sdkCreate(
 		return nil, err
 	}
 
-	var resp *svcsdk.Resource
+	var resp *svcsdk.CreateResourceOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateResourceWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateResource(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateResource", err)
 	if err != nil {
 		return nil, err
@@ -204,13 +203,13 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateResourceInput{}
 
 	if r.ko.Spec.ParentID != nil {
-		res.SetParentId(*r.ko.Spec.ParentID)
+		res.ParentId = r.ko.Spec.ParentID
 	}
 	if r.ko.Spec.PathPart != nil {
-		res.SetPathPart(*r.ko.Spec.PathPart)
+		res.PathPart = r.ko.Spec.PathPart
 	}
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 
 	return res, nil
@@ -239,9 +238,9 @@ func (rm *resourceManager) sdkUpdate(
 	}
 	updateResourceInput(desired, input, delta)
 
-	var resp *svcsdk.Resource
+	var resp *svcsdk.UpdateResourceOutput
 	_ = resp
-	resp, err = rm.sdkapi.UpdateResourceWithContext(ctx, input)
+	resp, err = rm.sdkapi.UpdateResource(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "UpdateResource", err)
 	if err != nil {
 		return nil, err
@@ -285,10 +284,10 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.UpdateResourceInput{}
 
 	if r.ko.Status.ID != nil {
-		res.SetResourceId(*r.ko.Status.ID)
+		res.ResourceId = r.ko.Status.ID
 	}
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 
 	return res, nil
@@ -310,7 +309,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteResourceOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteResourceWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteResource(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteResource", err)
 	return nil, err
 }
@@ -323,10 +322,10 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteResourceInput{}
 
 	if r.ko.Status.ID != nil {
-		res.SetResourceId(*r.ko.Status.ID)
+		res.ResourceId = r.ko.Status.ID
 	}
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 
 	return res, nil
@@ -434,11 +433,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case "BadRequestException",
 		"ConflictException",
 		"NotFoundException",

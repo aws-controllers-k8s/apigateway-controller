@@ -37,7 +37,11 @@ spec:
           metadata:
             type: object
           spec:
-            description: VpcLinkSpec defines the desired state of VpcLink.
+            description: |-
+              VpcLinkSpec defines the desired state of VpcLink.
+
+              An API Gateway VPC link for a RestApi to access resources in an Amazon Virtual
+              Private Cloud (VPC).
             properties:
               description:
                 description: The description of the VPC link.

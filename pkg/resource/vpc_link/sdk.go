@@ -28,8 +28,9 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/apigateway"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/apigateway"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +41,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.APIGateway{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.VPCLink{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +49,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,14 +74,12 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 
-	var resp *svcsdk.UpdateVpcLinkOutput
-	resp, err = rm.sdkapi.GetVpcLinkWithContext(ctx, input)
+	var resp *svcsdk.GetVpcLinkOutput
+	resp, err = rm.sdkapi.GetVpcLink(ctx, input)
 	rm.metrics.RecordAPICall("READ_ONE", "GetVpcLink", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
-			return nil, ackerr.NotFound
-		}
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NotFoundException" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NotFoundException" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -105,8 +104,8 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.Name = nil
 	}
-	if resp.Status != nil {
-		ko.Status.Status = resp.Status
+	if resp.Status != "" {
+		ko.Status.Status = aws.String(string(resp.Status))
 	} else {
 		ko.Status.Status = nil
 	}
@@ -116,24 +115,12 @@ func (rm *resourceManager) sdkFind(
 		ko.Status.StatusMessage = nil
 	}
 	if resp.Tags != nil {
-		f5 := map[string]*string{}
-		for f5key, f5valiter := range resp.Tags {
-			var f5val string
-			f5val = *f5valiter
-			f5[f5key] = &f5val
-		}
-		ko.Spec.Tags = f5
+		ko.Spec.Tags = aws.StringMap(resp.Tags)
 	} else {
 		ko.Spec.Tags = nil
 	}
 	if resp.TargetArns != nil {
-		f6 := []*string{}
-		for _, f6iter := range resp.TargetArns {
-			var f6elem string
-			f6elem = *f6iter
-			f6 = append(f6, &f6elem)
-		}
-		ko.Spec.TargetARNs = f6
+		ko.Spec.TargetARNs = aws.StringSlice(resp.TargetArns)
 	} else {
 		ko.Spec.TargetARNs = nil
 	}
@@ -160,7 +147,7 @@ func (rm *resourceManager) newDescribeRequestPayload(
 	res := &svcsdk.GetVpcLinkInput{}
 
 	if r.ko.Status.ID != nil {
-		res.SetVpcLinkId(*r.ko.Status.ID)
+		res.VpcLinkId = r.ko.Status.ID
 	}
 
 	return res, nil
@@ -183,9 +170,9 @@ func (rm *resourceManager) sdkCreate(
 		return nil, err
 	}
 
-	var resp *svcsdk.UpdateVpcLinkOutput
+	var resp *svcsdk.CreateVpcLinkOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateVpcLinkWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateVpcLink(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateVpcLink", err)
 	if err != nil {
 		return nil, err
@@ -209,8 +196,8 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.Name = nil
 	}
-	if resp.Status != nil {
-		ko.Status.Status = resp.Status
+	if resp.Status != "" {
+		ko.Status.Status = aws.String(string(resp.Status))
 	} else {
 		ko.Status.Status = nil
 	}
@@ -220,24 +207,12 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.StatusMessage = nil
 	}
 	if resp.Tags != nil {
-		f5 := map[string]*string{}
-		for f5key, f5valiter := range resp.Tags {
-			var f5val string
-			f5val = *f5valiter
-			f5[f5key] = &f5val
-		}
-		ko.Spec.Tags = f5
+		ko.Spec.Tags = aws.StringMap(resp.Tags)
 	} else {
 		ko.Spec.Tags = nil
 	}
 	if resp.TargetArns != nil {
-		f6 := []*string{}
-		for _, f6iter := range resp.TargetArns {
-			var f6elem string
-			f6elem = *f6iter
-			f6 = append(f6, &f6elem)
-		}
-		ko.Spec.TargetARNs = f6
+		ko.Spec.TargetARNs = aws.StringSlice(resp.TargetArns)
 	} else {
 		ko.Spec.TargetARNs = nil
 	}
@@ -255,28 +230,16 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateVpcLinkInput{}
 
 	if r.ko.Spec.Description != nil {
-		res.SetDescription(*r.ko.Spec.Description)
+		res.Description = r.ko.Spec.Description
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 	if r.ko.Spec.Tags != nil {
-		f2 := map[string]*string{}
-		for f2key, f2valiter := range r.ko.Spec.Tags {
-			var f2val string
-			f2val = *f2valiter
-			f2[f2key] = &f2val
-		}
-		res.SetTags(f2)
+		res.Tags = aws.ToStringMap(r.ko.Spec.Tags)
 	}
 	if r.ko.Spec.TargetARNs != nil {
-		f3 := []*string{}
-		for _, f3iter := range r.ko.Spec.TargetARNs {
-			var f3elem string
-			f3elem = *f3iter
-			f3 = append(f3, &f3elem)
-		}
-		res.SetTargetArns(f3)
+		res.TargetArns = aws.ToStringSlice(r.ko.Spec.TargetARNs)
 	}
 
 	return res, nil
@@ -320,7 +283,7 @@ func (rm *resourceManager) sdkUpdate(
 
 	var resp *svcsdk.UpdateVpcLinkOutput
 	_ = resp
-	resp, err = rm.sdkapi.UpdateVpcLinkWithContext(ctx, input)
+	resp, err = rm.sdkapi.UpdateVpcLink(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "UpdateVpcLink", err)
 	if err != nil {
 		return nil, err
@@ -344,8 +307,8 @@ func (rm *resourceManager) sdkUpdate(
 	} else {
 		ko.Spec.Name = nil
 	}
-	if resp.Status != nil {
-		ko.Status.Status = resp.Status
+	if resp.Status != "" {
+		ko.Status.Status = aws.String(string(resp.Status))
 	} else {
 		ko.Status.Status = nil
 	}
@@ -355,24 +318,12 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Status.StatusMessage = nil
 	}
 	if resp.Tags != nil {
-		f5 := map[string]*string{}
-		for f5key, f5valiter := range resp.Tags {
-			var f5val string
-			f5val = *f5valiter
-			f5[f5key] = &f5val
-		}
-		ko.Spec.Tags = f5
+		ko.Spec.Tags = aws.StringMap(resp.Tags)
 	} else {
 		ko.Spec.Tags = nil
 	}
 	if resp.TargetArns != nil {
-		f6 := []*string{}
-		for _, f6iter := range resp.TargetArns {
-			var f6elem string
-			f6elem = *f6iter
-			f6 = append(f6, &f6elem)
-		}
-		ko.Spec.TargetARNs = f6
+		ko.Spec.TargetARNs = aws.StringSlice(resp.TargetArns)
 	} else {
 		ko.Spec.TargetARNs = nil
 	}
@@ -391,7 +342,7 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.UpdateVpcLinkInput{}
 
 	if r.ko.Status.ID != nil {
-		res.SetVpcLinkId(*r.ko.Status.ID)
+		res.VpcLinkId = r.ko.Status.ID
 	}
 
 	return res, nil
@@ -417,7 +368,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteVpcLinkOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteVpcLinkWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteVpcLink(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteVpcLink", err)
 	return nil, err
 }
@@ -430,7 +381,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteVpcLinkInput{}
 
 	if r.ko.Status.ID != nil {
-		res.SetVpcLinkId(*r.ko.Status.ID)
+		res.VpcLinkId = r.ko.Status.ID
 	}
 
 	return res, nil

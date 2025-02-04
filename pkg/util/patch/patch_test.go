@@ -3,8 +3,8 @@ package patch_test
 import (
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/apigateway"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	apigatewaytypes "github.com/aws/aws-sdk-go-v2/service/apigateway/types"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/aws-controllers-k8s/apigateway-controller/pkg/util/patch"
@@ -15,7 +15,7 @@ func TestPatchOperations(t *testing.T) {
 		applyPatches func(*patch.Set)
 		description  string
 
-		expectedPatchOps []*apigateway.PatchOperation
+		expectedPatchOps []apigatewaytypes.PatchOperation
 	}{
 		{
 			description: "all supported patch operations",
@@ -32,41 +32,41 @@ func TestPatchOperations(t *testing.T) {
 				}, false)
 				patchSet.Remove("/removed")
 			},
-			expectedPatchOps: []*apigateway.PatchOperation{
+			expectedPatchOps: []apigatewaytypes.PatchOperation{
 				{
-					Op:    aws.String(apigateway.OpReplace),
+					Op:    apigatewaytypes.OpReplace,
 					Path:  aws.String("/field"),
 					Value: aws.String("newValue"),
 				},
 				{
-					Op:   aws.String(apigateway.OpRemove),
+					Op:   apigatewaytypes.OpRemove,
 					Path: aws.String("/items/a"),
 				},
 				{
-					Op:   aws.String(apigateway.OpRemove),
+					Op:   apigatewaytypes.OpRemove,
 					Path: aws.String("/items/c"),
 				},
 				{
-					Op:   aws.String(apigateway.OpAdd),
+					Op:   apigatewaytypes.OpAdd,
 					Path: aws.String("/items/d"),
 				},
 				{
-					Op:    aws.String(apigateway.OpReplace),
+					Op:    apigatewaytypes.OpReplace,
 					Path:  aws.String("/keys/k2"),
 					Value: aws.String("v5"),
 				},
 				{
-					Op:    aws.String(apigateway.OpReplace),
+					Op:    apigatewaytypes.OpReplace,
 					Path:  aws.String("/keys/k1"),
 					Value: aws.String("v1"),
 				},
 				{
-					Op:    aws.String(apigateway.OpReplace),
+					Op:    apigatewaytypes.OpReplace,
 					Path:  aws.String("/keys/k3"),
 					Value: aws.String("v3"),
 				},
 				{
-					Op:   aws.String(apigateway.OpRemove),
+					Op:   apigatewaytypes.OpRemove,
 					Path: aws.String("/removed"),
 				},
 			},
@@ -86,41 +86,41 @@ func TestPatchOperations(t *testing.T) {
 				}, false)
 				patchSet.Remove("/removed")
 			},
-			expectedPatchOps: []*apigateway.PatchOperation{
+			expectedPatchOps: []apigatewaytypes.PatchOperation{
 				{
-					Op:    aws.String(apigateway.OpReplace),
+					Op:    apigatewaytypes.OpReplace,
 					Path:  aws.String("/field"),
 					Value: aws.String("~newValue"),
 				},
 				{
-					Op:   aws.String(apigateway.OpRemove),
+					Op:   apigatewaytypes.OpRemove,
 					Path: aws.String("/items/~1a"),
 				},
 				{
-					Op:   aws.String(apigateway.OpRemove),
+					Op:   apigatewaytypes.OpRemove,
 					Path: aws.String("/items/c"),
 				},
 				{
-					Op:   aws.String(apigateway.OpAdd),
+					Op:   apigatewaytypes.OpAdd,
 					Path: aws.String("/items/~0d"),
 				},
 				{
-					Op:    aws.String(apigateway.OpReplace),
+					Op:    apigatewaytypes.OpReplace,
 					Path:  aws.String("/keys/k2~1~0"),
 					Value: aws.String("v5~/"),
 				},
 				{
-					Op:    aws.String(apigateway.OpReplace),
+					Op:    apigatewaytypes.OpReplace,
 					Path:  aws.String("/keys/k1~0"),
 					Value: aws.String("v1~/"),
 				},
 				{
-					Op:    aws.String(apigateway.OpReplace),
+					Op:    apigatewaytypes.OpReplace,
 					Path:  aws.String("/keys/k3~0~1"),
 					Value: aws.String("v3~/"),
 				},
 				{
-					Op:   aws.String(apigateway.OpRemove),
+					Op:   apigatewaytypes.OpRemove,
 					Path: aws.String("/removed"),
 				},
 			},
@@ -140,41 +140,41 @@ func TestPatchOperations(t *testing.T) {
 				}, true)
 				patchSet.Remove("/removed")
 			},
-			expectedPatchOps: []*apigateway.PatchOperation{
+			expectedPatchOps: []apigatewaytypes.PatchOperation{
 				{
-					Op:    aws.String(apigateway.OpReplace),
+					Op:    apigatewaytypes.OpReplace,
 					Path:  aws.String("/field"),
 					Value: aws.String("newValue"),
 				},
 				{
-					Op:   aws.String(apigateway.OpRemove),
+					Op:   apigatewaytypes.OpRemove,
 					Path: aws.String("/items/a"),
 				},
 				{
-					Op:   aws.String(apigateway.OpRemove),
+					Op:   apigatewaytypes.OpRemove,
 					Path: aws.String("/items/c"),
 				},
 				{
-					Op:   aws.String(apigateway.OpAdd),
+					Op:   apigatewaytypes.OpAdd,
 					Path: aws.String("/items/d"),
 				},
 				{
-					Op:    aws.String(apigateway.OpReplace),
+					Op:    apigatewaytypes.OpReplace,
 					Path:  aws.String("/keys/k2"),
 					Value: aws.String("v5"),
 				},
 				{
-					Op:    aws.String(apigateway.OpReplace),
+					Op:    apigatewaytypes.OpReplace,
 					Path:  aws.String("/keys/k1"),
 					Value: aws.String("v1"),
 				},
 				{
-					Op:    aws.String(apigateway.OpAdd),
+					Op:    apigatewaytypes.OpAdd,
 					Path:  aws.String("/keys/k3"),
 					Value: aws.String("v3"),
 				},
 				{
-					Op:   aws.String(apigateway.OpRemove),
+					Op:   apigatewaytypes.OpRemove,
 					Path: aws.String("/removed"),
 				},
 			},

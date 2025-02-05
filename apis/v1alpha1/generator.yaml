@@ -1,3 +1,5 @@
+sdk_names:
+  model_name: api-gateway
 operations:
   PutIntegration:
     operation_type:
@@ -12,17 +14,19 @@ ignore:
     - DocumentationPart
     - DocumentationVersion
     - DomainName
+    - DomainNameAccessAssociation
     - Model
     - RequestValidator
-#    - Resource
-#    - RestApi
-#    - Stage
+    # - Resource
+    # - RestApi
+    # - Stage
     - UsagePlan
     - UsagePlanKey
-#    - VpcLink
+    # - VpcLink
 
   field_paths:
     - Resource.ResourceMethods
+    - CreateResourceOutput.ResourceMethods
 resources:
   VpcLink:
     fields:

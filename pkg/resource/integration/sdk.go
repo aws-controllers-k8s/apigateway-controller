@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -28,8 +29,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/apigateway"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/apigateway"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/apigateway/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +43,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.APIGateway{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.Integration{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +51,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,14 +76,12 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 
-	var resp *svcsdk.Integration
-	resp, err = rm.sdkapi.GetIntegrationWithContext(ctx, input)
+	var resp *svcsdk.GetIntegrationOutput
+	resp, err = rm.sdkapi.GetIntegration(ctx, input)
 	rm.metrics.RecordAPICall("READ_ONE", "GetIntegration", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
-			return nil, ackerr.NotFound
-		}
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NotFoundException" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NotFoundException" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -91,13 +92,7 @@ func (rm *resourceManager) sdkFind(
 	ko := r.ko.DeepCopy()
 
 	if resp.CacheKeyParameters != nil {
-		f0 := []*string{}
-		for _, f0iter := range resp.CacheKeyParameters {
-			var f0elem string
-			f0elem = *f0iter
-			f0 = append(f0, &f0elem)
-		}
-		ko.Spec.CacheKeyParameters = f0
+		ko.Spec.CacheKeyParameters = aws.StringSlice(resp.CacheKeyParameters)
 	} else {
 		ko.Spec.CacheKeyParameters = nil
 	}
@@ -111,13 +106,13 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.ConnectionID = nil
 	}
-	if resp.ConnectionType != nil {
-		ko.Spec.ConnectionType = resp.ConnectionType
+	if resp.ConnectionType != "" {
+		ko.Spec.ConnectionType = aws.String(string(resp.ConnectionType))
 	} else {
 		ko.Spec.ConnectionType = nil
 	}
-	if resp.ContentHandling != nil {
-		ko.Spec.ContentHandling = resp.ContentHandling
+	if resp.ContentHandling != "" {
+		ko.Spec.ContentHandling = aws.String(string(resp.ContentHandling))
 	} else {
 		ko.Spec.ContentHandling = nil
 	}
@@ -135,26 +130,14 @@ func (rm *resourceManager) sdkFind(
 		f7 := map[string]*svcapitypes.IntegrationResponse{}
 		for f7key, f7valiter := range resp.IntegrationResponses {
 			f7val := &svcapitypes.IntegrationResponse{}
-			if f7valiter.ContentHandling != nil {
-				f7val.ContentHandling = f7valiter.ContentHandling
+			if f7valiter.ContentHandling != "" {
+				f7val.ContentHandling = aws.String(string(f7valiter.ContentHandling))
 			}
 			if f7valiter.ResponseParameters != nil {
-				f7valf1 := map[string]*string{}
-				for f7valf1key, f7valf1valiter := range f7valiter.ResponseParameters {
-					var f7valf1val string
-					f7valf1val = *f7valf1valiter
-					f7valf1[f7valf1key] = &f7valf1val
-				}
-				f7val.ResponseParameters = f7valf1
+				f7val.ResponseParameters = aws.StringMap(f7valiter.ResponseParameters)
 			}
 			if f7valiter.ResponseTemplates != nil {
-				f7valf2 := map[string]*string{}
-				for f7valf2key, f7valf2valiter := range f7valiter.ResponseTemplates {
-					var f7valf2val string
-					f7valf2val = *f7valf2valiter
-					f7valf2[f7valf2key] = &f7valf2val
-				}
-				f7val.ResponseTemplates = f7valf2
+				f7val.ResponseTemplates = aws.StringMap(f7valiter.ResponseTemplates)
 			}
 			if f7valiter.SelectionPattern != nil {
 				f7val.SelectionPattern = f7valiter.SelectionPattern
@@ -174,43 +157,26 @@ func (rm *resourceManager) sdkFind(
 		ko.Spec.PassthroughBehavior = nil
 	}
 	if resp.RequestParameters != nil {
-		f9 := map[string]*string{}
-		for f9key, f9valiter := range resp.RequestParameters {
-			var f9val string
-			f9val = *f9valiter
-			f9[f9key] = &f9val
-		}
-		ko.Spec.RequestParameters = f9
+		ko.Spec.RequestParameters = aws.StringMap(resp.RequestParameters)
 	} else {
 		ko.Spec.RequestParameters = nil
 	}
 	if resp.RequestTemplates != nil {
-		f10 := map[string]*string{}
-		for f10key, f10valiter := range resp.RequestTemplates {
-			var f10val string
-			f10val = *f10valiter
-			f10[f10key] = &f10val
-		}
-		ko.Spec.RequestTemplates = f10
+		ko.Spec.RequestTemplates = aws.StringMap(resp.RequestTemplates)
 	} else {
 		ko.Spec.RequestTemplates = nil
 	}
-	if resp.TimeoutInMillis != nil {
-		ko.Spec.TimeoutInMillis = resp.TimeoutInMillis
-	} else {
-		ko.Spec.TimeoutInMillis = nil
-	}
+	timeoutInMillisCopy := int64(resp.TimeoutInMillis)
+	ko.Spec.TimeoutInMillis = &timeoutInMillisCopy
 	if resp.TlsConfig != nil {
 		f12 := &svcapitypes.TLSConfig{}
-		if resp.TlsConfig.InsecureSkipVerification != nil {
-			f12.InsecureSkipVerification = resp.TlsConfig.InsecureSkipVerification
-		}
+		f12.InsecureSkipVerification = &resp.TlsConfig.InsecureSkipVerification
 		ko.Spec.TLSConfig = f12
 	} else {
 		ko.Spec.TLSConfig = nil
 	}
-	if resp.Type != nil {
-		ko.Spec.Type = resp.Type
+	if resp.Type != "" {
+		ko.Spec.Type = aws.String(string(resp.Type))
 	} else {
 		ko.Spec.Type = nil
 	}
@@ -230,7 +196,7 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadOneInput(
 	r *resource,
 ) bool {
-	return r.ko.Spec.RestAPIID == nil || r.ko.Spec.ResourceID == nil || r.ko.Spec.HTTPMethod == nil
+	return r.ko.Spec.HTTPMethod == nil || r.ko.Spec.ResourceID == nil || r.ko.Spec.RestAPIID == nil
 
 }
 
@@ -242,13 +208,13 @@ func (rm *resourceManager) newDescribeRequestPayload(
 	res := &svcsdk.GetIntegrationInput{}
 
 	if r.ko.Spec.HTTPMethod != nil {
-		res.SetHttpMethod(*r.ko.Spec.HTTPMethod)
+		res.HttpMethod = r.ko.Spec.HTTPMethod
 	}
 	if r.ko.Spec.ResourceID != nil {
-		res.SetResourceId(*r.ko.Spec.ResourceID)
+		res.ResourceId = r.ko.Spec.ResourceID
 	}
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 
 	return res, nil
@@ -271,9 +237,9 @@ func (rm *resourceManager) sdkCreate(
 		return nil, err
 	}
 
-	var resp *svcsdk.Integration
+	var resp *svcsdk.PutIntegrationOutput
 	_ = resp
-	resp, err = rm.sdkapi.PutIntegrationWithContext(ctx, input)
+	resp, err = rm.sdkapi.PutIntegration(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "PutIntegration", err)
 	if err != nil {
 		return nil, err
@@ -283,13 +249,7 @@ func (rm *resourceManager) sdkCreate(
 	ko := desired.ko.DeepCopy()
 
 	if resp.CacheKeyParameters != nil {
-		f0 := []*string{}
-		for _, f0iter := range resp.CacheKeyParameters {
-			var f0elem string
-			f0elem = *f0iter
-			f0 = append(f0, &f0elem)
-		}
-		ko.Spec.CacheKeyParameters = f0
+		ko.Spec.CacheKeyParameters = aws.StringSlice(resp.CacheKeyParameters)
 	} else {
 		ko.Spec.CacheKeyParameters = nil
 	}
@@ -303,13 +263,13 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.ConnectionID = nil
 	}
-	if resp.ConnectionType != nil {
-		ko.Spec.ConnectionType = resp.ConnectionType
+	if resp.ConnectionType != "" {
+		ko.Spec.ConnectionType = aws.String(string(resp.ConnectionType))
 	} else {
 		ko.Spec.ConnectionType = nil
 	}
-	if resp.ContentHandling != nil {
-		ko.Spec.ContentHandling = resp.ContentHandling
+	if resp.ContentHandling != "" {
+		ko.Spec.ContentHandling = aws.String(string(resp.ContentHandling))
 	} else {
 		ko.Spec.ContentHandling = nil
 	}
@@ -327,26 +287,14 @@ func (rm *resourceManager) sdkCreate(
 		f7 := map[string]*svcapitypes.IntegrationResponse{}
 		for f7key, f7valiter := range resp.IntegrationResponses {
 			f7val := &svcapitypes.IntegrationResponse{}
-			if f7valiter.ContentHandling != nil {
-				f7val.ContentHandling = f7valiter.ContentHandling
+			if f7valiter.ContentHandling != "" {
+				f7val.ContentHandling = aws.String(string(f7valiter.ContentHandling))
 			}
 			if f7valiter.ResponseParameters != nil {
-				f7valf1 := map[string]*string{}
-				for f7valf1key, f7valf1valiter := range f7valiter.ResponseParameters {
-					var f7valf1val string
-					f7valf1val = *f7valf1valiter
-					f7valf1[f7valf1key] = &f7valf1val
-				}
-				f7val.ResponseParameters = f7valf1
+				f7val.ResponseParameters = aws.StringMap(f7valiter.ResponseParameters)
 			}
 			if f7valiter.ResponseTemplates != nil {
-				f7valf2 := map[string]*string{}
-				for f7valf2key, f7valf2valiter := range f7valiter.ResponseTemplates {
-					var f7valf2val string
-					f7valf2val = *f7valf2valiter
-					f7valf2[f7valf2key] = &f7valf2val
-				}
-				f7val.ResponseTemplates = f7valf2
+				f7val.ResponseTemplates = aws.StringMap(f7valiter.ResponseTemplates)
 			}
 			if f7valiter.SelectionPattern != nil {
 				f7val.SelectionPattern = f7valiter.SelectionPattern
@@ -366,43 +314,26 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.PassthroughBehavior = nil
 	}
 	if resp.RequestParameters != nil {
-		f9 := map[string]*string{}
-		for f9key, f9valiter := range resp.RequestParameters {
-			var f9val string
-			f9val = *f9valiter
-			f9[f9key] = &f9val
-		}
-		ko.Spec.RequestParameters = f9
+		ko.Spec.RequestParameters = aws.StringMap(resp.RequestParameters)
 	} else {
 		ko.Spec.RequestParameters = nil
 	}
 	if resp.RequestTemplates != nil {
-		f10 := map[string]*string{}
-		for f10key, f10valiter := range resp.RequestTemplates {
-			var f10val string
-			f10val = *f10valiter
-			f10[f10key] = &f10val
-		}
-		ko.Spec.RequestTemplates = f10
+		ko.Spec.RequestTemplates = aws.StringMap(resp.RequestTemplates)
 	} else {
 		ko.Spec.RequestTemplates = nil
 	}
-	if resp.TimeoutInMillis != nil {
-		ko.Spec.TimeoutInMillis = resp.TimeoutInMillis
-	} else {
-		ko.Spec.TimeoutInMillis = nil
-	}
+	timeoutInMillisCopy := int64(resp.TimeoutInMillis)
+	ko.Spec.TimeoutInMillis = &timeoutInMillisCopy
 	if resp.TlsConfig != nil {
 		f12 := &svcapitypes.TLSConfig{}
-		if resp.TlsConfig.InsecureSkipVerification != nil {
-			f12.InsecureSkipVerification = resp.TlsConfig.InsecureSkipVerification
-		}
+		f12.InsecureSkipVerification = &resp.TlsConfig.InsecureSkipVerification
 		ko.Spec.TLSConfig = f12
 	} else {
 		ko.Spec.TLSConfig = nil
 	}
-	if resp.Type != nil {
-		ko.Spec.Type = resp.Type
+	if resp.Type != "" {
+		ko.Spec.Type = aws.String(string(resp.Type))
 	} else {
 		ko.Spec.Type = nil
 	}
@@ -425,77 +356,64 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.PutIntegrationInput{}
 
 	if r.ko.Spec.CacheKeyParameters != nil {
-		f0 := []*string{}
-		for _, f0iter := range r.ko.Spec.CacheKeyParameters {
-			var f0elem string
-			f0elem = *f0iter
-			f0 = append(f0, &f0elem)
-		}
-		res.SetCacheKeyParameters(f0)
+		res.CacheKeyParameters = aws.ToStringSlice(r.ko.Spec.CacheKeyParameters)
 	}
 	if r.ko.Spec.CacheNamespace != nil {
-		res.SetCacheNamespace(*r.ko.Spec.CacheNamespace)
+		res.CacheNamespace = r.ko.Spec.CacheNamespace
 	}
 	if r.ko.Spec.ConnectionID != nil {
-		res.SetConnectionId(*r.ko.Spec.ConnectionID)
+		res.ConnectionId = r.ko.Spec.ConnectionID
 	}
 	if r.ko.Spec.ConnectionType != nil {
-		res.SetConnectionType(*r.ko.Spec.ConnectionType)
+		res.ConnectionType = svcsdktypes.ConnectionType(*r.ko.Spec.ConnectionType)
 	}
 	if r.ko.Spec.ContentHandling != nil {
-		res.SetContentHandling(*r.ko.Spec.ContentHandling)
+		res.ContentHandling = svcsdktypes.ContentHandlingStrategy(*r.ko.Spec.ContentHandling)
 	}
 	if r.ko.Spec.Credentials != nil {
-		res.SetCredentials(*r.ko.Spec.Credentials)
+		res.Credentials = r.ko.Spec.Credentials
 	}
 	if r.ko.Spec.HTTPMethod != nil {
-		res.SetHttpMethod(*r.ko.Spec.HTTPMethod)
+		res.HttpMethod = r.ko.Spec.HTTPMethod
 	}
 	if r.ko.Spec.IntegrationHTTPMethod != nil {
-		res.SetIntegrationHttpMethod(*r.ko.Spec.IntegrationHTTPMethod)
+		res.IntegrationHttpMethod = r.ko.Spec.IntegrationHTTPMethod
 	}
 	if r.ko.Spec.PassthroughBehavior != nil {
-		res.SetPassthroughBehavior(*r.ko.Spec.PassthroughBehavior)
+		res.PassthroughBehavior = r.ko.Spec.PassthroughBehavior
 	}
 	if r.ko.Spec.RequestParameters != nil {
-		f9 := map[string]*string{}
-		for f9key, f9valiter := range r.ko.Spec.RequestParameters {
-			var f9val string
-			f9val = *f9valiter
-			f9[f9key] = &f9val
-		}
-		res.SetRequestParameters(f9)
+		res.RequestParameters = aws.ToStringMap(r.ko.Spec.RequestParameters)
 	}
 	if r.ko.Spec.RequestTemplates != nil {
-		f10 := map[string]*string{}
-		for f10key, f10valiter := range r.ko.Spec.RequestTemplates {
-			var f10val string
-			f10val = *f10valiter
-			f10[f10key] = &f10val
-		}
-		res.SetRequestTemplates(f10)
+		res.RequestTemplates = aws.ToStringMap(r.ko.Spec.RequestTemplates)
 	}
 	if r.ko.Spec.ResourceID != nil {
-		res.SetResourceId(*r.ko.Spec.ResourceID)
+		res.ResourceId = r.ko.Spec.ResourceID
 	}
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 	if r.ko.Spec.TimeoutInMillis != nil {
-		res.SetTimeoutInMillis(*r.ko.Spec.TimeoutInMillis)
+		timeoutInMillisCopy0 := *r.ko.Spec.TimeoutInMillis
+		if timeoutInMillisCopy0 > math.MaxInt32 || timeoutInMillisCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field TimeoutInMillis is of type int32")
+		}
+		timeoutInMillisCopy := int32(timeoutInMillisCopy0)
+		res.TimeoutInMillis = &timeoutInMillisCopy
 	}
 	if r.ko.Spec.TLSConfig != nil {
-		f14 := &svcsdk.TlsConfig{}
+		f14 := &svcsdktypes.TlsConfig{}
 		if r.ko.Spec.TLSConfig.InsecureSkipVerification != nil {
-			f14.SetInsecureSkipVerification(*r.ko.Spec.TLSConfig.InsecureSkipVerification)
+			f14.InsecureSkipVerification = *r.ko.Spec.TLSConfig.InsecureSkipVerification
 		}
-		res.SetTlsConfig(f14)
+		res.TlsConfig = f14
 	}
 	if r.ko.Spec.Type != nil {
-		res.SetType(*r.ko.Spec.Type)
+		res.Type = svcsdktypes.IntegrationType(*r.ko.Spec.Type)
 	}
 	if r.ko.Spec.URI != nil {
-		res.SetUri(*r.ko.Spec.URI)
+		res.Uri = r.ko.Spec.URI
 	}
 
 	return res, nil
@@ -524,9 +442,9 @@ func (rm *resourceManager) sdkUpdate(
 	}
 	updateIntegrationInput(desired, latest, input, delta)
 
-	var resp *svcsdk.Integration
+	var resp *svcsdk.UpdateIntegrationOutput
 	_ = resp
-	resp, err = rm.sdkapi.UpdateIntegrationWithContext(ctx, input)
+	resp, err = rm.sdkapi.UpdateIntegration(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "UpdateIntegration", err)
 	if err != nil {
 		return nil, err
@@ -536,13 +454,7 @@ func (rm *resourceManager) sdkUpdate(
 	ko := desired.ko.DeepCopy()
 
 	if resp.CacheKeyParameters != nil {
-		f0 := []*string{}
-		for _, f0iter := range resp.CacheKeyParameters {
-			var f0elem string
-			f0elem = *f0iter
-			f0 = append(f0, &f0elem)
-		}
-		ko.Spec.CacheKeyParameters = f0
+		ko.Spec.CacheKeyParameters = aws.StringSlice(resp.CacheKeyParameters)
 	} else {
 		ko.Spec.CacheKeyParameters = nil
 	}
@@ -556,13 +468,13 @@ func (rm *resourceManager) sdkUpdate(
 	} else {
 		ko.Spec.ConnectionID = nil
 	}
-	if resp.ConnectionType != nil {
-		ko.Spec.ConnectionType = resp.ConnectionType
+	if resp.ConnectionType != "" {
+		ko.Spec.ConnectionType = aws.String(string(resp.ConnectionType))
 	} else {
 		ko.Spec.ConnectionType = nil
 	}
-	if resp.ContentHandling != nil {
-		ko.Spec.ContentHandling = resp.ContentHandling
+	if resp.ContentHandling != "" {
+		ko.Spec.ContentHandling = aws.String(string(resp.ContentHandling))
 	} else {
 		ko.Spec.ContentHandling = nil
 	}
@@ -580,26 +492,14 @@ func (rm *resourceManager) sdkUpdate(
 		f7 := map[string]*svcapitypes.IntegrationResponse{}
 		for f7key, f7valiter := range resp.IntegrationResponses {
 			f7val := &svcapitypes.IntegrationResponse{}
-			if f7valiter.ContentHandling != nil {
-				f7val.ContentHandling = f7valiter.ContentHandling
+			if f7valiter.ContentHandling != "" {
+				f7val.ContentHandling = aws.String(string(f7valiter.ContentHandling))
 			}
 			if f7valiter.ResponseParameters != nil {
-				f7valf1 := map[string]*string{}
-				for f7valf1key, f7valf1valiter := range f7valiter.ResponseParameters {
-					var f7valf1val string
-					f7valf1val = *f7valf1valiter
-					f7valf1[f7valf1key] = &f7valf1val
-				}
-				f7val.ResponseParameters = f7valf1
+				f7val.ResponseParameters = aws.StringMap(f7valiter.ResponseParameters)
 			}
 			if f7valiter.ResponseTemplates != nil {
-				f7valf2 := map[string]*string{}
-				for f7valf2key, f7valf2valiter := range f7valiter.ResponseTemplates {
-					var f7valf2val string
-					f7valf2val = *f7valf2valiter
-					f7valf2[f7valf2key] = &f7valf2val
-				}
-				f7val.ResponseTemplates = f7valf2
+				f7val.ResponseTemplates = aws.StringMap(f7valiter.ResponseTemplates)
 			}
 			if f7valiter.SelectionPattern != nil {
 				f7val.SelectionPattern = f7valiter.SelectionPattern
@@ -619,43 +519,26 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Spec.PassthroughBehavior = nil
 	}
 	if resp.RequestParameters != nil {
-		f9 := map[string]*string{}
-		for f9key, f9valiter := range resp.RequestParameters {
-			var f9val string
-			f9val = *f9valiter
-			f9[f9key] = &f9val
-		}
-		ko.Spec.RequestParameters = f9
+		ko.Spec.RequestParameters = aws.StringMap(resp.RequestParameters)
 	} else {
 		ko.Spec.RequestParameters = nil
 	}
 	if resp.RequestTemplates != nil {
-		f10 := map[string]*string{}
-		for f10key, f10valiter := range resp.RequestTemplates {
-			var f10val string
-			f10val = *f10valiter
-			f10[f10key] = &f10val
-		}
-		ko.Spec.RequestTemplates = f10
+		ko.Spec.RequestTemplates = aws.StringMap(resp.RequestTemplates)
 	} else {
 		ko.Spec.RequestTemplates = nil
 	}
-	if resp.TimeoutInMillis != nil {
-		ko.Spec.TimeoutInMillis = resp.TimeoutInMillis
-	} else {
-		ko.Spec.TimeoutInMillis = nil
-	}
+	timeoutInMillisCopy := int64(resp.TimeoutInMillis)
+	ko.Spec.TimeoutInMillis = &timeoutInMillisCopy
 	if resp.TlsConfig != nil {
 		f12 := &svcapitypes.TLSConfig{}
-		if resp.TlsConfig.InsecureSkipVerification != nil {
-			f12.InsecureSkipVerification = resp.TlsConfig.InsecureSkipVerification
-		}
+		f12.InsecureSkipVerification = &resp.TlsConfig.InsecureSkipVerification
 		ko.Spec.TLSConfig = f12
 	} else {
 		ko.Spec.TLSConfig = nil
 	}
-	if resp.Type != nil {
-		ko.Spec.Type = resp.Type
+	if resp.Type != "" {
+		ko.Spec.Type = aws.String(string(resp.Type))
 	} else {
 		ko.Spec.Type = nil
 	}
@@ -679,13 +562,13 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.UpdateIntegrationInput{}
 
 	if r.ko.Spec.HTTPMethod != nil {
-		res.SetHttpMethod(*r.ko.Spec.HTTPMethod)
+		res.HttpMethod = r.ko.Spec.HTTPMethod
 	}
 	if r.ko.Spec.ResourceID != nil {
-		res.SetResourceId(*r.ko.Spec.ResourceID)
+		res.ResourceId = r.ko.Spec.ResourceID
 	}
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 
 	return res, nil
@@ -707,7 +590,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteIntegrationOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteIntegrationWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteIntegration(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteIntegration", err)
 	return nil, err
 }
@@ -720,13 +603,13 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteIntegrationInput{}
 
 	if r.ko.Spec.HTTPMethod != nil {
-		res.SetHttpMethod(*r.ko.Spec.HTTPMethod)
+		res.HttpMethod = r.ko.Spec.HTTPMethod
 	}
 	if r.ko.Spec.ResourceID != nil {
-		res.SetResourceId(*r.ko.Spec.ResourceID)
+		res.ResourceId = r.ko.Spec.ResourceID
 	}
 	if r.ko.Spec.RestAPIID != nil {
-		res.SetRestApiId(*r.ko.Spec.RestAPIID)
+		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 
 	return res, nil
@@ -834,11 +717,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case "BadRequestException",
 		"ConflictException",
 		"NotFoundException",

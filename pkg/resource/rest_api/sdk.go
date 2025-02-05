@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -28,8 +29,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/apigateway"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/apigateway"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/apigateway/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +43,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.APIGateway{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.RestAPI{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +51,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,14 +76,12 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 
-	var resp *svcsdk.RestApi
-	resp, err = rm.sdkapi.GetRestApiWithContext(ctx, input)
+	var resp *svcsdk.GetRestApiOutput
+	resp, err = rm.sdkapi.GetRestApi(ctx, input)
 	rm.metrics.RecordAPICall("READ_ONE", "GetRestApi", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
-			return nil, ackerr.NotFound
-		}
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "NotFoundException" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "NotFoundException" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -90,19 +91,13 @@ func (rm *resourceManager) sdkFind(
 	// the original Kubernetes object we passed to the function
 	ko := r.ko.DeepCopy()
 
-	if resp.ApiKeySource != nil {
-		ko.Spec.APIKeySource = resp.ApiKeySource
+	if resp.ApiKeySource != "" {
+		ko.Spec.APIKeySource = aws.String(string(resp.ApiKeySource))
 	} else {
 		ko.Spec.APIKeySource = nil
 	}
 	if resp.BinaryMediaTypes != nil {
-		f1 := []*string{}
-		for _, f1iter := range resp.BinaryMediaTypes {
-			var f1elem string
-			f1elem = *f1iter
-			f1 = append(f1, &f1elem)
-		}
-		ko.Spec.BinaryMediaTypes = f1
+		ko.Spec.BinaryMediaTypes = aws.StringSlice(resp.BinaryMediaTypes)
 	} else {
 		ko.Spec.BinaryMediaTypes = nil
 	}
@@ -116,30 +111,20 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.Description = nil
 	}
-	if resp.DisableExecuteApiEndpoint != nil {
-		ko.Spec.DisableExecuteAPIEndpoint = resp.DisableExecuteApiEndpoint
-	} else {
-		ko.Spec.DisableExecuteAPIEndpoint = nil
-	}
+	ko.Spec.DisableExecuteAPIEndpoint = &resp.DisableExecuteApiEndpoint
 	if resp.EndpointConfiguration != nil {
 		f5 := &svcapitypes.EndpointConfiguration{}
 		if resp.EndpointConfiguration.Types != nil {
 			f5f0 := []*string{}
 			for _, f5f0iter := range resp.EndpointConfiguration.Types {
-				var f5f0elem string
-				f5f0elem = *f5f0iter
-				f5f0 = append(f5f0, &f5f0elem)
+				var f5f0elem *string
+				f5f0elem = aws.String(string(f5f0iter))
+				f5f0 = append(f5f0, f5f0elem)
 			}
 			f5.Types = f5f0
 		}
 		if resp.EndpointConfiguration.VpcEndpointIds != nil {
-			f5f1 := []*string{}
-			for _, f5f1iter := range resp.EndpointConfiguration.VpcEndpointIds {
-				var f5f1elem string
-				f5f1elem = *f5f1iter
-				f5f1 = append(f5f1, &f5f1elem)
-			}
-			f5.VPCEndpointIDs = f5f1
+			f5.VPCEndpointIDs = aws.StringSlice(resp.EndpointConfiguration.VpcEndpointIds)
 		}
 		ko.Spec.EndpointConfiguration = f5
 	} else {
@@ -151,7 +136,8 @@ func (rm *resourceManager) sdkFind(
 		ko.Status.ID = nil
 	}
 	if resp.MinimumCompressionSize != nil {
-		ko.Spec.MinimumCompressionSize = resp.MinimumCompressionSize
+		minimumCompressionSizeCopy := int64(*resp.MinimumCompressionSize)
+		ko.Spec.MinimumCompressionSize = &minimumCompressionSizeCopy
 	} else {
 		ko.Spec.MinimumCompressionSize = nil
 	}
@@ -171,13 +157,7 @@ func (rm *resourceManager) sdkFind(
 		ko.Status.RootResourceID = nil
 	}
 	if resp.Tags != nil {
-		f11 := map[string]*string{}
-		for f11key, f11valiter := range resp.Tags {
-			var f11val string
-			f11val = *f11valiter
-			f11[f11key] = &f11val
-		}
-		ko.Spec.Tags = f11
+		ko.Spec.Tags = aws.StringMap(resp.Tags)
 	} else {
 		ko.Spec.Tags = nil
 	}
@@ -187,13 +167,7 @@ func (rm *resourceManager) sdkFind(
 		ko.Spec.Version = nil
 	}
 	if resp.Warnings != nil {
-		f13 := []*string{}
-		for _, f13iter := range resp.Warnings {
-			var f13elem string
-			f13elem = *f13iter
-			f13 = append(f13, &f13elem)
-		}
-		ko.Status.Warnings = f13
+		ko.Status.Warnings = aws.StringSlice(resp.Warnings)
 	} else {
 		ko.Status.Warnings = nil
 	}
@@ -220,7 +194,7 @@ func (rm *resourceManager) newDescribeRequestPayload(
 	res := &svcsdk.GetRestApiInput{}
 
 	if r.ko.Status.ID != nil {
-		res.SetRestApiId(*r.ko.Status.ID)
+		res.RestApiId = r.ko.Status.ID
 	}
 
 	return res, nil
@@ -243,9 +217,9 @@ func (rm *resourceManager) sdkCreate(
 		return nil, err
 	}
 
-	var resp *svcsdk.RestApi
+	var resp *svcsdk.CreateRestApiOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateRestApiWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateRestApi(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateRestApi", err)
 	if err != nil {
 		return nil, err
@@ -254,19 +228,13 @@ func (rm *resourceManager) sdkCreate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
-	if resp.ApiKeySource != nil {
-		ko.Spec.APIKeySource = resp.ApiKeySource
+	if resp.ApiKeySource != "" {
+		ko.Spec.APIKeySource = aws.String(string(resp.ApiKeySource))
 	} else {
 		ko.Spec.APIKeySource = nil
 	}
 	if resp.BinaryMediaTypes != nil {
-		f1 := []*string{}
-		for _, f1iter := range resp.BinaryMediaTypes {
-			var f1elem string
-			f1elem = *f1iter
-			f1 = append(f1, &f1elem)
-		}
-		ko.Spec.BinaryMediaTypes = f1
+		ko.Spec.BinaryMediaTypes = aws.StringSlice(resp.BinaryMediaTypes)
 	} else {
 		ko.Spec.BinaryMediaTypes = nil
 	}
@@ -280,30 +248,20 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.Description = nil
 	}
-	if resp.DisableExecuteApiEndpoint != nil {
-		ko.Spec.DisableExecuteAPIEndpoint = resp.DisableExecuteApiEndpoint
-	} else {
-		ko.Spec.DisableExecuteAPIEndpoint = nil
-	}
+	ko.Spec.DisableExecuteAPIEndpoint = &resp.DisableExecuteApiEndpoint
 	if resp.EndpointConfiguration != nil {
 		f5 := &svcapitypes.EndpointConfiguration{}
 		if resp.EndpointConfiguration.Types != nil {
 			f5f0 := []*string{}
 			for _, f5f0iter := range resp.EndpointConfiguration.Types {
-				var f5f0elem string
-				f5f0elem = *f5f0iter
-				f5f0 = append(f5f0, &f5f0elem)
+				var f5f0elem *string
+				f5f0elem = aws.String(string(f5f0iter))
+				f5f0 = append(f5f0, f5f0elem)
 			}
 			f5.Types = f5f0
 		}
 		if resp.EndpointConfiguration.VpcEndpointIds != nil {
-			f5f1 := []*string{}
-			for _, f5f1iter := range resp.EndpointConfiguration.VpcEndpointIds {
-				var f5f1elem string
-				f5f1elem = *f5f1iter
-				f5f1 = append(f5f1, &f5f1elem)
-			}
-			f5.VPCEndpointIDs = f5f1
+			f5.VPCEndpointIDs = aws.StringSlice(resp.EndpointConfiguration.VpcEndpointIds)
 		}
 		ko.Spec.EndpointConfiguration = f5
 	} else {
@@ -315,7 +273,8 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.ID = nil
 	}
 	if resp.MinimumCompressionSize != nil {
-		ko.Spec.MinimumCompressionSize = resp.MinimumCompressionSize
+		minimumCompressionSizeCopy := int64(*resp.MinimumCompressionSize)
+		ko.Spec.MinimumCompressionSize = &minimumCompressionSizeCopy
 	} else {
 		ko.Spec.MinimumCompressionSize = nil
 	}
@@ -335,13 +294,7 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.RootResourceID = nil
 	}
 	if resp.Tags != nil {
-		f11 := map[string]*string{}
-		for f11key, f11valiter := range resp.Tags {
-			var f11val string
-			f11val = *f11valiter
-			f11[f11key] = &f11val
-		}
-		ko.Spec.Tags = f11
+		ko.Spec.Tags = aws.StringMap(resp.Tags)
 	} else {
 		ko.Spec.Tags = nil
 	}
@@ -351,13 +304,7 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.Version = nil
 	}
 	if resp.Warnings != nil {
-		f13 := []*string{}
-		for _, f13iter := range resp.Warnings {
-			var f13elem string
-			f13elem = *f13iter
-			f13 = append(f13, &f13elem)
-		}
-		ko.Status.Warnings = f13
+		ko.Status.Warnings = aws.StringSlice(resp.Warnings)
 	} else {
 		ko.Status.Warnings = nil
 	}
@@ -375,68 +322,55 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateRestApiInput{}
 
 	if r.ko.Spec.APIKeySource != nil {
-		res.SetApiKeySource(*r.ko.Spec.APIKeySource)
+		res.ApiKeySource = svcsdktypes.ApiKeySourceType(*r.ko.Spec.APIKeySource)
 	}
 	if r.ko.Spec.BinaryMediaTypes != nil {
-		f1 := []*string{}
-		for _, f1iter := range r.ko.Spec.BinaryMediaTypes {
-			var f1elem string
-			f1elem = *f1iter
-			f1 = append(f1, &f1elem)
-		}
-		res.SetBinaryMediaTypes(f1)
+		res.BinaryMediaTypes = aws.ToStringSlice(r.ko.Spec.BinaryMediaTypes)
 	}
 	if r.ko.Spec.CloneFrom != nil {
-		res.SetCloneFrom(*r.ko.Spec.CloneFrom)
+		res.CloneFrom = r.ko.Spec.CloneFrom
 	}
 	if r.ko.Spec.Description != nil {
-		res.SetDescription(*r.ko.Spec.Description)
+		res.Description = r.ko.Spec.Description
 	}
 	if r.ko.Spec.DisableExecuteAPIEndpoint != nil {
-		res.SetDisableExecuteApiEndpoint(*r.ko.Spec.DisableExecuteAPIEndpoint)
+		res.DisableExecuteApiEndpoint = *r.ko.Spec.DisableExecuteAPIEndpoint
 	}
 	if r.ko.Spec.EndpointConfiguration != nil {
-		f5 := &svcsdk.EndpointConfiguration{}
+		f5 := &svcsdktypes.EndpointConfiguration{}
 		if r.ko.Spec.EndpointConfiguration.Types != nil {
-			f5f0 := []*string{}
+			f5f0 := []svcsdktypes.EndpointType{}
 			for _, f5f0iter := range r.ko.Spec.EndpointConfiguration.Types {
 				var f5f0elem string
-				f5f0elem = *f5f0iter
-				f5f0 = append(f5f0, &f5f0elem)
+				f5f0elem = string(*f5f0iter)
+				f5f0 = append(f5f0, svcsdktypes.EndpointType(f5f0elem))
 			}
-			f5.SetTypes(f5f0)
+			f5.Types = f5f0
 		}
 		if r.ko.Spec.EndpointConfiguration.VPCEndpointIDs != nil {
-			f5f1 := []*string{}
-			for _, f5f1iter := range r.ko.Spec.EndpointConfiguration.VPCEndpointIDs {
-				var f5f1elem string
-				f5f1elem = *f5f1iter
-				f5f1 = append(f5f1, &f5f1elem)
-			}
-			f5.SetVpcEndpointIds(f5f1)
+			f5.VpcEndpointIds = aws.ToStringSlice(r.ko.Spec.EndpointConfiguration.VPCEndpointIDs)
 		}
-		res.SetEndpointConfiguration(f5)
+		res.EndpointConfiguration = f5
 	}
 	if r.ko.Spec.MinimumCompressionSize != nil {
-		res.SetMinimumCompressionSize(*r.ko.Spec.MinimumCompressionSize)
+		minimumCompressionSizeCopy0 := *r.ko.Spec.MinimumCompressionSize
+		if minimumCompressionSizeCopy0 > math.MaxInt32 || minimumCompressionSizeCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field MinimumCompressionSize is of type int32")
+		}
+		minimumCompressionSizeCopy := int32(minimumCompressionSizeCopy0)
+		res.MinimumCompressionSize = &minimumCompressionSizeCopy
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetName(*r.ko.Spec.Name)
+		res.Name = r.ko.Spec.Name
 	}
 	if r.ko.Spec.Policy != nil {
-		res.SetPolicy(*r.ko.Spec.Policy)
+		res.Policy = r.ko.Spec.Policy
 	}
 	if r.ko.Spec.Tags != nil {
-		f9 := map[string]*string{}
-		for f9key, f9valiter := range r.ko.Spec.Tags {
-			var f9val string
-			f9val = *f9valiter
-			f9[f9key] = &f9val
-		}
-		res.SetTags(f9)
+		res.Tags = aws.ToStringMap(r.ko.Spec.Tags)
 	}
 	if r.ko.Spec.Version != nil {
-		res.SetVersion(*r.ko.Spec.Version)
+		res.Version = r.ko.Spec.Version
 	}
 
 	return res, nil
@@ -480,9 +414,9 @@ func (rm *resourceManager) sdkUpdate(
 		return nil, err
 	}
 
-	var resp *svcsdk.RestApi
+	var resp *svcsdk.UpdateRestApiOutput
 	_ = resp
-	resp, err = rm.sdkapi.UpdateRestApiWithContext(ctx, input)
+	resp, err = rm.sdkapi.UpdateRestApi(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "UpdateRestApi", err)
 	if err != nil {
 		return nil, err
@@ -491,19 +425,13 @@ func (rm *resourceManager) sdkUpdate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
-	if resp.ApiKeySource != nil {
-		ko.Spec.APIKeySource = resp.ApiKeySource
+	if resp.ApiKeySource != "" {
+		ko.Spec.APIKeySource = aws.String(string(resp.ApiKeySource))
 	} else {
 		ko.Spec.APIKeySource = nil
 	}
 	if resp.BinaryMediaTypes != nil {
-		f1 := []*string{}
-		for _, f1iter := range resp.BinaryMediaTypes {
-			var f1elem string
-			f1elem = *f1iter
-			f1 = append(f1, &f1elem)
-		}
-		ko.Spec.BinaryMediaTypes = f1
+		ko.Spec.BinaryMediaTypes = aws.StringSlice(resp.BinaryMediaTypes)
 	} else {
 		ko.Spec.BinaryMediaTypes = nil
 	}
@@ -517,30 +445,20 @@ func (rm *resourceManager) sdkUpdate(
 	} else {
 		ko.Spec.Description = nil
 	}
-	if resp.DisableExecuteApiEndpoint != nil {
-		ko.Spec.DisableExecuteAPIEndpoint = resp.DisableExecuteApiEndpoint
-	} else {
-		ko.Spec.DisableExecuteAPIEndpoint = nil
-	}
+	ko.Spec.DisableExecuteAPIEndpoint = &resp.DisableExecuteApiEndpoint
 	if resp.EndpointConfiguration != nil {
 		f5 := &svcapitypes.EndpointConfiguration{}
 		if resp.EndpointConfiguration.Types != nil {
 			f5f0 := []*string{}
 			for _, f5f0iter := range resp.EndpointConfiguration.Types {
-				var f5f0elem string
-				f5f0elem = *f5f0iter
-				f5f0 = append(f5f0, &f5f0elem)
+				var f5f0elem *string
+				f5f0elem = aws.String(string(f5f0iter))
+				f5f0 = append(f5f0, f5f0elem)
 			}
 			f5.Types = f5f0
 		}
 		if resp.EndpointConfiguration.VpcEndpointIds != nil {
-			f5f1 := []*string{}
-			for _, f5f1iter := range resp.EndpointConfiguration.VpcEndpointIds {
-				var f5f1elem string
-				f5f1elem = *f5f1iter
-				f5f1 = append(f5f1, &f5f1elem)
-			}
-			f5.VPCEndpointIDs = f5f1
+			f5.VPCEndpointIDs = aws.StringSlice(resp.EndpointConfiguration.VpcEndpointIds)
 		}
 		ko.Spec.EndpointConfiguration = f5
 	} else {
@@ -552,7 +470,8 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Status.ID = nil
 	}
 	if resp.MinimumCompressionSize != nil {
-		ko.Spec.MinimumCompressionSize = resp.MinimumCompressionSize
+		minimumCompressionSizeCopy := int64(*resp.MinimumCompressionSize)
+		ko.Spec.MinimumCompressionSize = &minimumCompressionSizeCopy
 	} else {
 		ko.Spec.MinimumCompressionSize = nil
 	}
@@ -572,13 +491,7 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Status.RootResourceID = nil
 	}
 	if resp.Tags != nil {
-		f11 := map[string]*string{}
-		for f11key, f11valiter := range resp.Tags {
-			var f11val string
-			f11val = *f11valiter
-			f11[f11key] = &f11val
-		}
-		ko.Spec.Tags = f11
+		ko.Spec.Tags = aws.StringMap(resp.Tags)
 	} else {
 		ko.Spec.Tags = nil
 	}
@@ -588,13 +501,7 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Spec.Version = nil
 	}
 	if resp.Warnings != nil {
-		f13 := []*string{}
-		for _, f13iter := range resp.Warnings {
-			var f13elem string
-			f13elem = *f13iter
-			f13 = append(f13, &f13elem)
-		}
-		ko.Status.Warnings = f13
+		ko.Status.Warnings = aws.StringSlice(resp.Warnings)
 	} else {
 		ko.Status.Warnings = nil
 	}
@@ -613,7 +520,7 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.UpdateRestApiInput{}
 
 	if r.ko.Status.ID != nil {
-		res.SetRestApiId(*r.ko.Status.ID)
+		res.RestApiId = r.ko.Status.ID
 	}
 
 	return res, nil
@@ -635,7 +542,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteRestApiOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteRestApiWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteRestApi(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteRestApi", err)
 	return nil, err
 }
@@ -648,7 +555,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteRestApiInput{}
 
 	if r.ko.Status.ID != nil {
-		res.SetRestApiId(*r.ko.Status.ID)
+		res.RestApiId = r.ko.Status.ID
 	}
 
 	return res, nil
@@ -756,11 +663,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case "BadRequestException",
 		"ConflictException",
 		"NotFoundException",

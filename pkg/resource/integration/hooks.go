@@ -17,8 +17,8 @@ import (
 	"strconv"
 
 	"github.com/aws-controllers-k8s/runtime/pkg/compare"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/apigateway"
 	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/apigateway"
 
 	svcapitypes "github.com/aws-controllers-k8s/apigateway-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/apigateway-controller/pkg/util/patch"

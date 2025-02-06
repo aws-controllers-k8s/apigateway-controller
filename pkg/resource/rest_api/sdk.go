@@ -355,7 +355,7 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.MinimumCompressionSize != nil {
 		minimumCompressionSizeCopy0 := *r.ko.Spec.MinimumCompressionSize
 		if minimumCompressionSizeCopy0 > math.MaxInt32 || minimumCompressionSizeCopy0 < math.MinInt32 {
-			return nil, fmt.Errorf("error: field MinimumCompressionSize is of type int32")
+			return nil, fmt.Errorf("error: field minimumCompressionSize is of type int32")
 		}
 		minimumCompressionSizeCopy := int32(minimumCompressionSizeCopy0)
 		res.MinimumCompressionSize = &minimumCompressionSizeCopy

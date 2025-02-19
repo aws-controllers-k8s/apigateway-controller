@@ -28,20 +28,25 @@ type IntegrationSpec struct {
 	// A list of request parameters whose values API Gateway caches. To be valid
 	// values for cacheKeyParameters, these parameters must also be specified for
 	// Method requestParameters.
+
 	CacheKeyParameters []*string `json:"cacheKeyParameters,omitempty"`
 	// Specifies a group of related cached parameters. By default, API Gateway uses
 	// the resource ID as the cacheNamespace. You can specify the same cacheNamespace
 	// across resources to return the same cached data for requests to different
 	// resources.
+
 	CacheNamespace *string `json:"cacheNamespace,omitempty"`
 	// The ID of the VpcLink used for the integration. Specify this value only if
 	// you specify VPC_LINK as the connection type.
-	ConnectionID  *string                                  `json:"connectionID,omitempty"`
+
+	ConnectionID *string `json:"connectionID,omitempty"`
+
 	ConnectionRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"connectionRef,omitempty"`
 	// The type of the network connection to the integration endpoint. The valid
 	// value is INTERNET for connections through the public routable internet or
 	// VPC_LINK for private connections between API Gateway and a network load balancer
 	// in a VPC. The default value is INTERNET.
+
 	ConnectionType *string `json:"connectionType,omitempty"`
 	// Specifies how to handle request payload content type conversions. Supported
 	// values are CONVERT_TO_BINARY and CONVERT_TO_TEXT, with the following behaviors:
@@ -49,18 +54,25 @@ type IntegrationSpec struct {
 	// If this property is not defined, the request payload will be passed through
 	// from the method request to integration request without modification, provided
 	// that the passthroughBehavior is configured to support payload pass-through.
+
 	ContentHandling *string `json:"contentHandling,omitempty"`
 	// Specifies whether credentials are required for a put integration.
+
 	Credentials *string `json:"credentials,omitempty"`
 	// Specifies the HTTP method for the integration.
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
+
 	HTTPMethod *string `json:"httpMethod"`
 	// The HTTP method for the integration.
+
 	IntegrationHTTPMethod *string `json:"integrationHTTPMethod,omitempty"`
 	// Specifies the pass-through behavior for incoming requests based on the Content-Type
 	// header in the request, and the available mapping templates specified as the
 	// requestTemplates property on the Integration resource. There are three valid
 	// values: WHEN_NO_MATCH, WHEN_NO_TEMPLATES, and NEVER.
+
 	PassthroughBehavior *string `json:"passthroughBehavior,omitempty"`
 	// A key-value map specifying request parameters that are passed from the method
 	// request to the back end. The key is an integration request parameter name
@@ -69,24 +81,39 @@ type IntegrationSpec struct {
 	// the back end. The method request parameter value must match the pattern of
 	// method.request.{location}.{name}, where location is querystring, path, or
 	// header and name must be a valid and unique method request parameter name.
+
 	RequestParameters map[string]*string `json:"requestParameters,omitempty"`
 	// Represents a map of Velocity templates that are applied on the request payload
 	// based on the value of the Content-Type header sent by the client. The content
 	// type value is the key in this map, and the template (as a String) is the
 	// value.
+
 	RequestTemplates map[string]*string `json:"requestTemplates,omitempty"`
 	// Specifies a put integration request's resource ID.
-	ResourceID  *string                                  `json:"resourceID,omitempty"`
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+
+	ResourceID *string `json:"resourceID,omitempty"`
+
 	ResourceRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"resourceRef,omitempty"`
 	// The string identifier of the associated RestApi.
-	RestAPIID  *string                                  `json:"restAPIID,omitempty"`
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+
+	RestAPIID *string `json:"restAPIID,omitempty"`
+
 	RestAPIRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"restAPIRef,omitempty"`
 	// Custom timeout between 50 and 29,000 milliseconds. The default value is 29,000
 	// milliseconds or 29 seconds.
-	TimeoutInMillis *int64     `json:"timeoutInMillis,omitempty"`
-	TLSConfig       *TLSConfig `json:"tlsConfig,omitempty"`
+
+	TimeoutInMillis *int64 `json:"timeoutInMillis,omitempty"`
+
+	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
 	// Specifies a put integration input's type.
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
+
 	Type *string `json:"type,omitempty"`
 	// Specifies Uniform Resource Identifier (URI) of the integration endpoint.
 	// For HTTP or HTTP_PROXY integrations, the URI must be a fully formed, encoded
@@ -107,6 +134,7 @@ type IntegrationSpec struct {
 	// the integrated Amazon Web Services service, if applicable. For example, for
 	// integration with the S3 API of GetObject, the uri can be either arn:aws:apigateway:us-west-2:s3:action/GetObject&Bucket={bucket}&Key={key}
 	// or arn:aws:apigateway:us-west-2:s3:path/{bucket}/{key}.
+
 	URI *string `json:"uri,omitempty"`
 }
 
@@ -117,7 +145,7 @@ type IntegrationStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

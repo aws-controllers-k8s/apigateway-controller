@@ -432,10 +432,6 @@ func (rm *resourceManager) sdkUpdate(
 	defer func() {
 		exit(err)
 	}()
-	if immutableFieldChanges := rm.getImmutableFieldChanges(delta); len(immutableFieldChanges) > 0 {
-		msg := fmt.Sprintf("Immutable Spec fields have been modified: %s", strings.Join(immutableFieldChanges, ","))
-		return nil, ackerr.NewTerminalError(fmt.Errorf(msg))
-	}
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
 	if err != nil {
 		return nil, err
@@ -731,25 +727,4 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	default:
 		return false
 	}
-}
-
-// getImmutableFieldChanges returns list of immutable fields from the
-func (rm *resourceManager) getImmutableFieldChanges(
-	delta *ackcompare.Delta,
-) []string {
-	var fields []string
-	if delta.DifferentAt("Spec.HTTPMethod") {
-		fields = append(fields, "HTTPMethod")
-	}
-	if delta.DifferentAt("Spec.ResourceID") {
-		fields = append(fields, "ResourceID")
-	}
-	if delta.DifferentAt("Spec.RestAPIID") {
-		fields = append(fields, "RestAPIID")
-	}
-	if delta.DifferentAt("Spec.Type") {
-		fields = append(fields, "Type")
-	}
-
-	return fields
 }

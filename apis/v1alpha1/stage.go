@@ -27,35 +27,52 @@ import (
 type StageSpec struct {
 
 	// Whether cache clustering is enabled for the stage.
+
 	CacheClusterEnabled *bool `json:"cacheClusterEnabled,omitempty"`
 	// The stage's cache capacity in GB. For more information about choosing a cache
 	// size, see Enabling API caching to enhance responsiveness (https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html).
+
 	CacheClusterSize *string `json:"cacheClusterSize,omitempty"`
 	// The canary deployment settings of this stage.
+
 	CanarySettings *CanarySettings `json:"canarySettings,omitempty"`
 	// The identifier of the Deployment resource for the Stage resource.
+
 	// +kubebuilder:validation:Required
+
 	DeploymentID *string `json:"deploymentID"`
 	// The description of the Stage resource.
+
 	Description *string `json:"description,omitempty"`
 	// The version of the associated API documentation.
+
 	DocumentationVersion *string `json:"documentationVersion,omitempty"`
 	// The string identifier of the associated RestApi.
-	RestAPIID  *string                                  `json:"restAPIID,omitempty"`
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+
+	RestAPIID *string `json:"restAPIID,omitempty"`
+
 	RestAPIRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"restAPIRef,omitempty"`
 	// The name for the Stage resource. Stage names can only contain alphanumeric
 	// characters, hyphens, and underscores. Maximum length is 128 characters.
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
+
 	StageName *string `json:"stageName"`
 	// The key-value map of strings. The valid character set is [a-zA-Z+-=._:/].
 	// The tag key can be up to 128 characters and must not start with aws:. The
 	// tag value can be up to 256 characters.
+
 	Tags map[string]*string `json:"tags,omitempty"`
 	// Specifies whether active tracing with X-ray is enabled for the Stage.
+
 	TracingEnabled *bool `json:"tracingEnabled,omitempty"`
 	// A map that defines the stage variables for the new Stage resource. Variable
 	// names can have alphanumeric and underscore characters, and the values must
 	// match [A-Za-z0-9-._~:/?#&=,]+.
+
 	Variables map[string]*string `json:"variables,omitempty"`
 }
 
@@ -66,7 +83,7 @@ type StageStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

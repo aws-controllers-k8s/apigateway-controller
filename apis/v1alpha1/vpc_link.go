@@ -27,18 +27,25 @@ import (
 type VPCLinkSpec struct {
 
 	// The description of the VPC link.
+
 	Description *string `json:"description,omitempty"`
 	// The name used to label and identify the VPC link.
+
 	// +kubebuilder:validation:Required
+
 	Name *string `json:"name"`
 	// The key-value map of strings. The valid character set is [a-zA-Z+-=._:/].
 	// The tag key can be up to 128 characters and must not start with aws:. The
 	// tag value can be up to 256 characters.
+
 	Tags map[string]*string `json:"tags,omitempty"`
 	// The ARN of the network load balancer of the VPC targeted by the VPC link.
 	// The network load balancer must be owned by the same Amazon Web Services account
 	// of the API owner.
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
+
 	TargetARNs []*string `json:"targetARNs"`
 }
 
@@ -49,7 +56,7 @@ type VPCLinkStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

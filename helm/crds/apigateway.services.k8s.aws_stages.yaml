@@ -44,15 +44,11 @@ spec:
               callable by users.
             properties:
               cacheClusterEnabled:
-                description: Whether cache clustering is enabled for the stage.
                 type: boolean
               cacheClusterSize:
-                description: |-
-                  The stage's cache capacity in GB. For more information about choosing a cache
-                  size, see Enabling API caching to enhance responsiveness (https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html).
                 type: string
               canarySettings:
-                description: The canary deployment settings of this stage.
+                description: Configuration settings of a canary deployment.
                 properties:
                   deploymentID:
                     type: string
@@ -66,18 +62,16 @@ spec:
                     type: boolean
                 type: object
               deploymentID:
-                description: The identifier of the Deployment resource for the Stage
-                  resource.
                 type: string
               description:
-                description: The description of the Stage resource.
                 type: string
               documentationVersion:
-                description: The version of the associated API documentation.
                 type: string
               restAPIID:
-                description: The string identifier of the associated RestApi.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               restAPIRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference\ntype to provide more user friendly syntax
@@ -96,29 +90,19 @@ spec:
                     type: object
                 type: object
               stageName:
-                description: |-
-                  The name for the Stage resource. Stage names can only contain alphanumeric
-                  characters, hyphens, and underscores. Maximum length is 128 characters.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               tags:
                 additionalProperties:
                   type: string
-                description: |-
-                  The key-value map of strings. The valid character set is [a-zA-Z+-=._:/].
-                  The tag key can be up to 128 characters and must not start with aws:. The
-                  tag value can be up to 256 characters.
                 type: object
               tracingEnabled:
-                description: Specifies whether active tracing with X-ray is enabled
-                  for the Stage.
                 type: boolean
               variables:
                 additionalProperties:
                   type: string
-                description: |-
-                  A map that defines the stage variables for the new Stage resource. Variable
-                  names can have alphanumeric and underscore characters, and the values must
-                  match [A-Za-z0-9-._~:/?#&=,]+.
                 type: object
             required:
             - deploymentID
@@ -172,7 +156,7 @@ spec:
                 type: string
               conditions:
                 description: |-
-                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  All CRs managed by ACK have a common `Status.Conditions` member that
                   contains a collection of `ackv1alpha1.Condition` objects that describe
                   the various terminal states of the CR and its backend AWS service API
                   resource

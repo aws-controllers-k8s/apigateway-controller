@@ -34,6 +34,7 @@ type RestAPISpec struct {
 	// RestApi supports only UTF-8-encoded text payloads.
 	BinaryMediaTypes []*string `json:"binaryMediaTypes,omitempty"`
 	// The ID of the RestApi that you want to clone from.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	CloneFrom *string `json:"cloneFrom,omitempty"`
 	// The description of the RestApi.
 	Description *string `json:"description,omitempty"`
@@ -62,6 +63,7 @@ type RestAPISpec struct {
 	// tag value can be up to 256 characters.
 	Tags map[string]*string `json:"tags,omitempty"`
 	// A version identifier for the API.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	Version *string `json:"version,omitempty"`
 }
 
@@ -72,7 +74,7 @@ type RestAPIStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

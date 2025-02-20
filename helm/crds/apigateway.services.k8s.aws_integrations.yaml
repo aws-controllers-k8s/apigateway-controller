@@ -102,6 +102,9 @@ spec:
               httpMethod:
                 description: Specifies the HTTP method for the integration.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               integrationHTTPMethod:
                 description: The HTTP method for the integration.
                 type: string
@@ -136,6 +139,9 @@ spec:
               resourceID:
                 description: Specifies a put integration request's resource ID.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               resourceRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference\ntype to provide more user friendly syntax
@@ -156,6 +162,9 @@ spec:
               restAPIID:
                 description: The string identifier of the associated RestApi.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               restAPIRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference\ntype to provide more user friendly syntax
@@ -188,6 +197,9 @@ spec:
               type:
                 description: Specifies a put integration input's type.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               uri:
                 description: |-
                   Specifies Uniform Resource Identifier (URI) of the integration endpoint.
@@ -248,7 +260,7 @@ spec:
                 type: object
               conditions:
                 description: |-
-                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  All CRs managed by ACK have a common `Status.Conditions` member that
                   contains a collection of `ackv1alpha1.Condition` objects that describe
                   the various terminal states of the CR and its backend AWS service API
                   resource

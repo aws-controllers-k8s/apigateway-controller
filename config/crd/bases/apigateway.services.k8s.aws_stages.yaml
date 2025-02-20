@@ -78,6 +78,9 @@ spec:
               restAPIID:
                 description: The string identifier of the associated RestApi.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               restAPIRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference\ntype to provide more user friendly syntax
@@ -100,6 +103,9 @@ spec:
                   The name for the Stage resource. Stage names can only contain alphanumeric
                   characters, hyphens, and underscores. Maximum length is 128 characters.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               tags:
                 additionalProperties:
                   type: string
@@ -172,7 +178,7 @@ spec:
                 type: string
               conditions:
                 description: |-
-                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  All CRs managed by ACK have a common `Status.Conditions` member that
                   contains a collection of `ackv1alpha1.Condition` objects that describe
                   the various terminal states of the CR and its backend AWS service API
                   resource

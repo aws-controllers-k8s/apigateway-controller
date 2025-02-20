@@ -53,6 +53,7 @@ type IntegrationSpec struct {
 	// Specifies whether credentials are required for a put integration.
 	Credentials *string `json:"credentials,omitempty"`
 	// Specifies the HTTP method for the integration.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	HTTPMethod *string `json:"httpMethod"`
 	// The HTTP method for the integration.
@@ -76,9 +77,11 @@ type IntegrationSpec struct {
 	// value.
 	RequestTemplates map[string]*string `json:"requestTemplates,omitempty"`
 	// Specifies a put integration request's resource ID.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	ResourceID  *string                                  `json:"resourceID,omitempty"`
 	ResourceRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"resourceRef,omitempty"`
 	// The string identifier of the associated RestApi.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	RestAPIID  *string                                  `json:"restAPIID,omitempty"`
 	RestAPIRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"restAPIRef,omitempty"`
 	// Custom timeout between 50 and 29,000 milliseconds. The default value is 29,000
@@ -86,6 +89,7 @@ type IntegrationSpec struct {
 	TimeoutInMillis *int64     `json:"timeoutInMillis,omitempty"`
 	TLSConfig       *TLSConfig `json:"tlsConfig,omitempty"`
 	// Specifies a put integration input's type.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	Type *string `json:"type,omitempty"`
 	// Specifies Uniform Resource Identifier (URI) of the integration endpoint.
@@ -117,7 +121,7 @@ type IntegrationStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

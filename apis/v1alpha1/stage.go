@@ -41,10 +41,12 @@ type StageSpec struct {
 	// The version of the associated API documentation.
 	DocumentationVersion *string `json:"documentationVersion,omitempty"`
 	// The string identifier of the associated RestApi.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	RestAPIID  *string                                  `json:"restAPIID,omitempty"`
 	RestAPIRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"restAPIRef,omitempty"`
 	// The name for the Stage resource. Stage names can only contain alphanumeric
 	// characters, hyphens, and underscores. Maximum length is 128 characters.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	StageName *string `json:"stageName"`
 	// The key-value map of strings. The valid character set is [a-zA-Z+-=._:/].
@@ -66,7 +68,7 @@ type StageStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

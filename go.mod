@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/aws-controllers-k8s/ec2-controller v1.2.15
-	github.com/aws-controllers-k8s/runtime v0.44.0
+	github.com/aws-controllers-k8s/runtime v0.45.0
 	github.com/aws/aws-sdk-go v1.55.0
 	github.com/aws/aws-sdk-go-v2 v1.36.0
 	github.com/aws/aws-sdk-go-v2/service/apigateway v1.28.10

@@ -52,6 +52,8 @@ type APIMethodResponseSpec struct {
 	RestAPIID  *string                                  `json:"restAPIID,omitempty"`
 	RestAPIRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"restAPIRef,omitempty"`
 	// The method response's status code.
+	//
+	// Regex Pattern: `^[1-5]\d\d$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	StatusCode *string `json:"statusCode"`

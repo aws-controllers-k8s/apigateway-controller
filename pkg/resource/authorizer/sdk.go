@@ -275,7 +275,7 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.AuthorizerResultTTLInSeconds != nil {
 		authorizerResultTTLInSecondsCopy0 := *r.ko.Spec.AuthorizerResultTTLInSeconds
 		if authorizerResultTTLInSecondsCopy0 > math.MaxInt32 || authorizerResultTTLInSecondsCopy0 < math.MinInt32 {
-			return nil, fmt.Errorf("error: field authorizerResultTtlInSeconds is of type int32")
+			return nil, fmt.Errorf("error: field AuthorizerResultTtlInSeconds is of type int32")
 		}
 		authorizerResultTTLInSecondsCopy := int32(authorizerResultTTLInSecondsCopy0)
 		res.AuthorizerResultTtlInSeconds = &authorizerResultTTLInSecondsCopy

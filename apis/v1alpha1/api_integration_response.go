@@ -58,6 +58,8 @@ type APIIntegrationResponseSpec struct {
 	SelectionPattern *string `json:"selectionPattern,omitempty"`
 	// Specifies the status code that is used to map the integration response to
 	// an existing MethodResponse.
+	//
+	// Regex Pattern: `^[1-5]\d\d$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	StatusCode *string `json:"statusCode"`

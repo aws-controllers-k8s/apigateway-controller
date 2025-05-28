@@ -116,7 +116,10 @@ spec:
                     type: object
                 type: object
               statusCode:
-                description: The method response's status code.
+                description: |-
+                  The method response's status code.
+
+                  Regex Pattern: `^[1-5]\d\d$`
                 type: string
                 x-kubernetes-validations:
                 - message: Value is immutable once set

@@ -1,0 +1,14 @@
+apiVersion: apigateway.services.k8s.aws/v1alpha1
+kind: DomainName
+metadata:
+  name: $DOMAIN_RES_NAME
+spec:
+  domainName: $DOMAIN_NAME
+  regionalCertificateARN: $CERT_ARN
+  endpointConfiguration:
+    types:
+      - REGIONAL
+  securityPolicy: TLS_1_2
+  tags:
+    Environment: test
+    Team: ack-test

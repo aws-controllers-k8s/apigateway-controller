@@ -14,6 +14,7 @@ rules:
   - apimethodresponses
   - authorizers
   - deployments
+  - domainnames
   - integrations
   - methods
   - resources
@@ -36,6 +37,7 @@ rules:
   - apimethodresponses
   - authorizers
   - deployments
+  - domainnames
   - integrations
   - methods
   - resources

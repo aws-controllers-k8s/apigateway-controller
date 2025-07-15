@@ -141,30 +141,6 @@ type DocumentationVersion struct {
 	Version     *string      `json:"version,omitempty"`
 }
 
-// Represents a custom domain name as a user-friendly host name of an API (RestApi).
-type DomainName struct {
-	CertificateARN           *string      `json:"certificateARN,omitempty"`
-	CertificateName          *string      `json:"certificateName,omitempty"`
-	CertificateUploadDate    *metav1.Time `json:"certificateUploadDate,omitempty"`
-	DistributionDomainName   *string      `json:"distributionDomainName,omitempty"`
-	DistributionHostedZoneID *string      `json:"distributionHostedZoneID,omitempty"`
-	DomainName               *string      `json:"domainName,omitempty"`
-	DomainNameARN            *string      `json:"domainNameARN,omitempty"`
-	DomainNameID             *string      `json:"domainNameID,omitempty"`
-	DomainNameStatusMessage  *string      `json:"domainNameStatusMessage,omitempty"`
-	// The endpoint configuration to indicate the types of endpoints an API (RestApi)
-	// or its custom domain name (DomainName) has.
-	EndpointConfiguration               *EndpointConfiguration `json:"endpointConfiguration,omitempty"`
-	ManagementPolicy                    *string                `json:"managementPolicy,omitempty"`
-	OwnershipVerificationCertificateARN *string                `json:"ownershipVerificationCertificateARN,omitempty"`
-	Policy                              *string                `json:"policy,omitempty"`
-	RegionalCertificateARN              *string                `json:"regionalCertificateARN,omitempty"`
-	RegionalCertificateName             *string                `json:"regionalCertificateName,omitempty"`
-	RegionalDomainName                  *string                `json:"regionalDomainName,omitempty"`
-	RegionalHostedZoneID                *string                `json:"regionalHostedZoneID,omitempty"`
-	Tags                                map[string]*string     `json:"tags,omitempty"`
-}
-
 // Represents a domain name access association between an access association
 // source and a private custom domain name. With a domain name access association,
 // an access association source can invoke a private custom domain name while
@@ -174,6 +150,37 @@ type DomainNameAccessAssociation struct {
 	DomainNameAccessAssociationARN *string            `json:"domainNameAccessAssociationARN,omitempty"`
 	DomainNameARN                  *string            `json:"domainNameARN,omitempty"`
 	Tags                           map[string]*string `json:"tags,omitempty"`
+}
+
+// Represents a custom domain name as a user-friendly host name of an API (RestApi).
+type DomainName_SDK struct {
+	CertificateARN           *string      `json:"certificateARN,omitempty"`
+	CertificateName          *string      `json:"certificateName,omitempty"`
+	CertificateUploadDate    *metav1.Time `json:"certificateUploadDate,omitempty"`
+	DistributionDomainName   *string      `json:"distributionDomainName,omitempty"`
+	DistributionHostedZoneID *string      `json:"distributionHostedZoneID,omitempty"`
+	DomainName               *string      `json:"domainName,omitempty"`
+	DomainNameARN            *string      `json:"domainNameARN,omitempty"`
+	DomainNameID             *string      `json:"domainNameID,omitempty"`
+	DomainNameStatus         *string      `json:"domainNameStatus,omitempty"`
+	DomainNameStatusMessage  *string      `json:"domainNameStatusMessage,omitempty"`
+	// The endpoint configuration to indicate the types of endpoints an API (RestApi)
+	// or its custom domain name (DomainName) has.
+	EndpointConfiguration *EndpointConfiguration `json:"endpointConfiguration,omitempty"`
+	ManagementPolicy      *string                `json:"managementPolicy,omitempty"`
+	// The mutual TLS authentication configuration for a custom domain name. If
+	// specified, API Gateway performs two-way authentication between the client
+	// and the server. Clients must present a trusted certificate to access your
+	// API.
+	MutualTLSAuthentication             *MutualTLSAuthentication `json:"mutualTLSAuthentication,omitempty"`
+	OwnershipVerificationCertificateARN *string                  `json:"ownershipVerificationCertificateARN,omitempty"`
+	Policy                              *string                  `json:"policy,omitempty"`
+	RegionalCertificateARN              *string                  `json:"regionalCertificateARN,omitempty"`
+	RegionalCertificateName             *string                  `json:"regionalCertificateName,omitempty"`
+	RegionalDomainName                  *string                  `json:"regionalDomainName,omitempty"`
+	RegionalHostedZoneID                *string                  `json:"regionalHostedZoneID,omitempty"`
+	SecurityPolicy                      *string                  `json:"securityPolicy,omitempty"`
+	Tags                                map[string]*string       `json:"tags,omitempty"`
 }
 
 // The endpoint configuration to indicate the types of endpoints an API (RestApi)

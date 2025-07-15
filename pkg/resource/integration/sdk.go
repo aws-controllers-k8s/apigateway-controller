@@ -397,7 +397,7 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.TimeoutInMillis != nil {
 		timeoutInMillisCopy0 := *r.ko.Spec.TimeoutInMillis
 		if timeoutInMillisCopy0 > math.MaxInt32 || timeoutInMillisCopy0 < math.MinInt32 {
-			return nil, fmt.Errorf("error: field timeoutInMillis is of type int32")
+			return nil, fmt.Errorf("error: field TimeoutInMillis is of type int32")
 		}
 		timeoutInMillisCopy := int32(timeoutInMillisCopy0)
 		res.TimeoutInMillis = &timeoutInMillisCopy

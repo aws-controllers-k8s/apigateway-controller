@@ -1,0 +1,298 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.2
+  name: domainnames.apigateway.services.k8s.aws
+spec:
+  group: apigateway.services.k8s.aws
+  names:
+    kind: DomainName
+    listKind: DomainNameList
+    plural: domainnames
+    singular: domainname
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DomainName is the Schema for the DomainNames API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              DomainNameSpec defines the desired state of DomainName.
+
+              Represents a custom domain name as a user-friendly host name of an API (RestApi).
+            properties:
+              certificateARN:
+                description: |-
+                  The reference to an Amazon Web Services-managed certificate that will be
+                  used by edge-optimized endpoint or private endpoint for this domain name.
+                  Certificate Manager is the only supported source.
+                type: string
+              certificateBody:
+                description: |-
+                  [Deprecated] The body of the server certificate that will be used by edge-optimized
+                  endpoint or private endpoint for this domain name provided by your certificate
+                  authority.
+                type: string
+              certificateChain:
+                description: |-
+                  [Deprecated] The intermediate certificates and optionally the root certificate,
+                  one after the other without any blank lines, used by an edge-optimized endpoint
+                  for this domain name. If you include the root certificate, your certificate
+                  chain must start with intermediate certificates and end with the root certificate.
+                  Use the intermediate certificates that were provided by your certificate
+                  authority. Do not include any intermediaries that are not in the chain of
+                  trust path.
+                type: string
+              certificateName:
+                description: |-
+                  The user-friendly name of the certificate that will be used by edge-optimized
+                  endpoint or private endpoint for this domain name.
+                type: string
+              certificatePrivateKey:
+                description: |-
+                  [Deprecated] Your edge-optimized endpoint's domain name certificate's private
+                  key.
+                type: string
+              domainName:
+                description: The name of the DomainName resource.
+                type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
+              endpointConfiguration:
+                description: |-
+                  The endpoint configuration of this DomainName showing the endpoint types
+                  of the domain name.
+                properties:
+                  types:
+                    items:
+                      type: string
+                    type: array
+                  vpcEndpointIDs:
+                    items:
+                      type: string
+                    type: array
+                  vpcEndpointRefs:
+                    description: Reference field for VPCEndpointIDs
+                    items:
+                      description: "AWSResourceReferenceWrapper provides a wrapper
+                        around *AWSResourceReference\ntype to provide more user friendly
+                        syntax for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
+                        \ name: my-api"
+                      properties:
+                        from:
+                          description: |-
+                            AWSResourceReference provides all the values necessary to reference another
+                            k8s resource for finding the identifier(Id/ARN/Name)
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                      type: object
+                    type: array
+                type: object
+              mutualTLSAuthentication:
+                description: |-
+                  The mutual TLS authentication configuration for a custom domain name. If
+                  specified, API Gateway performs two-way authentication between the client
+                  and the server. Clients must present a trusted certificate to access your
+                  API.
+                properties:
+                  truststoreURI:
+                    type: string
+                  truststoreVersion:
+                    type: string
+                type: object
+              ownershipVerificationCertificateARN:
+                description: |-
+                  The ARN of the public certificate issued by ACM to validate ownership of
+                  your custom domain. Only required when configuring mutual TLS and using an
+                  ACM imported or private CA certificate ARN as the regionalCertificateArn.
+                type: string
+              policy:
+                description: |-
+                  A stringified JSON policy document that applies to the execute-api service
+                  for this DomainName regardless of the caller and Method configuration. Supported
+                  only for private custom domain names.
+                type: string
+              regionalCertificateARN:
+                description: |-
+                  The reference to an Amazon Web Services-managed certificate that will be
+                  used by regional endpoint for this domain name. Certificate Manager is the
+                  only supported source.
+                type: string
+              regionalCertificateName:
+                description: |-
+                  The user-friendly name of the certificate that will be used by regional endpoint
+                  for this domain name.
+                type: string
+              securityPolicy:
+                description: |-
+                  The Transport Layer Security (TLS) version + cipher suite for this DomainName.
+                  The valid values are TLS_1_0 and TLS_1_2.
+                type: string
+              tags:
+                additionalProperties:
+                  type: string
+                description: |-
+                  The key-value map of strings. The valid character set is [a-zA-Z+-=._:/].
+                  The tag key can be up to 128 characters and must not start with aws:. The
+                  tag value can be up to 256 characters.
+                type: object
+            required:
+            - domainName
+            type: object
+          status:
+            description: DomainNameStatus defines the observed state of DomainName
+            properties:
+              ackResourceMetadata:
+                description: |-
+                  All CRs managed by ACK have a common `Status.ACKResourceMetadata` member
+                  that is used to contain resource sync state, account ownership,
+                  constructed ARN for the resource
+                properties:
+                  arn:
+                    description: |-
+                      ARN is the Amazon Resource Name for the resource. This is a
+                      globally-unique identifier and is set only by the ACK service controller
+                      once the controller has orchestrated the creation of the resource OR
+                      when it has verified that an "adopted" resource (a resource where the
+                      ARN annotation was set by the Kubernetes user on the CR) exists and
+                      matches the supplied CR's Spec field values.
+                      https://github.com/aws/aws-controllers-k8s/issues/270
+                    type: string
+                  ownerAccountID:
+                    description: |-
+                      OwnerAccountID is the AWS Account ID of the account that owns the
+                      backend AWS service API resource.
+                    type: string
+                  region:
+                    description: Region is the AWS region in which the resource exists
+                      or will exist.
+                    type: string
+                required:
+                - ownerAccountID
+                - region
+                type: object
+              certificateUploadDate:
+                description: |-
+                  The timestamp when the certificate that was used by edge-optimized endpoint
+                  or private endpoint for this domain name was uploaded.
+                format: date-time
+                type: string
+              conditions:
+                description: |-
+                  All CRs managed by ACK have a common `Status.Conditions` member that
+                  contains a collection of `ackv1alpha1.Condition` objects that describe
+                  the various terminal states of the CR and its backend AWS service API
+                  resource
+                items:
+                  description: |-
+                    Condition is the common struct used by all CRDs managed by ACK service
+                    controllers to indicate terminal states  of the CR and its backend AWS
+                    service API resource
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type is the type of the Condition
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              distributionDomainName:
+                description: |-
+                  The domain name of the Amazon CloudFront distribution associated with this
+                  custom domain name for an edge-optimized endpoint. You set up this association
+                  when adding a DNS record pointing the custom domain name to this distribution
+                  name. For more information about CloudFront distributions, see the Amazon
+                  CloudFront documentation.
+                type: string
+              distributionHostedZoneID:
+                description: |-
+                  The region-agnostic Amazon Route 53 Hosted Zone ID of the edge-optimized
+                  endpoint. The valid value is Z2FDTNDATAQYW2 for all the regions. For more
+                  information, see Set up a Regional Custom Domain Name and AWS Regions and
+                  Endpoints for API Gateway.
+                type: string
+              domainNameID:
+                description: |-
+                  The identifier for the domain name resource. Supported only for private custom
+                  domain names.
+                type: string
+              domainNameStatus:
+                description: |-
+                  The status of the DomainName migration. The valid values are AVAILABLE and
+                  UPDATING. If the status is UPDATING, the domain cannot be modified further
+                  until the existing operation is complete. If it is AVAILABLE, the domain
+                  can be updated.
+                type: string
+              domainNameStatusMessage:
+                description: |-
+                  An optional text message containing detailed information about status of
+                  the DomainName migration.
+                type: string
+              managementPolicy:
+                description: |-
+                  A stringified JSON policy document that applies to the API Gateway Management
+                  service for this DomainName. This policy document controls access for access
+                  association sources to create domain name access associations with this DomainName.
+                  Supported only for private custom domain names.
+                type: string
+              regionalDomainName:
+                description: |-
+                  The domain name associated with the regional endpoint for this custom domain
+                  name. You set up this association by adding a DNS record that points the
+                  custom domain name to this regional domain name. The regional domain name
+                  is returned by API Gateway when you create a regional endpoint.
+                type: string
+              regionalHostedZoneID:
+                description: |-
+                  The region-specific Amazon Route 53 Hosted Zone ID of the regional endpoint.
+                  For more information, see Set up a Regional Custom Domain Name and AWS Regions
+                  and Endpoints for API Gateway.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

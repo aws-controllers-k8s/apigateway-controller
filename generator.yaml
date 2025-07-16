@@ -433,12 +433,6 @@ resources:
         is_primary_key: true
         is_required: true
         is_immutable: true
-      RestAPIID:
-        references:
-          resource: RestAPI
-          path: Status.ID
-        is_required: true
-        is_immutable: true
     hooks:
       sdk_update_pre_build_request:
         template_path: hooks/domain_name/sdk_update_pre_build_request.go.tpl

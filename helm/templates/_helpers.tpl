@@ -77,6 +77,7 @@ rules:
   - apimethodresponses
   - authorizers
   - deployments
+  - domainnames
   - integrations
   - methods
   - resources
@@ -99,6 +100,7 @@ rules:
   - apimethodresponses/status
   - authorizers/status
   - deployments/status
+  - domainnames/status
   - integrations/status
   - methods/status
   - resources/status

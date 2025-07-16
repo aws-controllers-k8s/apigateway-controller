@@ -21,6 +21,7 @@ rules:
   - apimethodresponses
   - authorizers
   - deployments
+  - domainnames
   - integrations
   - methods
   - resources

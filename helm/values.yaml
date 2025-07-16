@@ -150,6 +150,7 @@ reconcile:
     - APIMethodResponse
     - Authorizer
     - Deployment
+    - DomainName
     - Integration
     - Method
     - Resource

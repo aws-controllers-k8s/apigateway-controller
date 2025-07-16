@@ -7,6 +7,7 @@ resources:
   - bases/apigateway.services.k8s.aws_apimethodresponses.yaml
   - bases/apigateway.services.k8s.aws_authorizers.yaml
   - bases/apigateway.services.k8s.aws_deployments.yaml
+  - bases/apigateway.services.k8s.aws_domainnames.yaml
   - bases/apigateway.services.k8s.aws_integrations.yaml
   - bases/apigateway.services.k8s.aws_methods.yaml
   - bases/apigateway.services.k8s.aws_resources.yaml

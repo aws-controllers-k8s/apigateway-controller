@@ -96,14 +96,14 @@ const (
 	DocumentationPartType_RESPONSE_HEADER DocumentationPartType = "RESPONSE_HEADER"
 )
 
-type DomainNameStatus string
+type DomainNameStatus_SDK string
 
 const (
-	DomainNameStatus_AVAILABLE                      DomainNameStatus = "AVAILABLE"
-	DomainNameStatus_PENDING                        DomainNameStatus = "PENDING"
-	DomainNameStatus_PENDING_CERTIFICATE_REIMPORT   DomainNameStatus = "PENDING_CERTIFICATE_REIMPORT"
-	DomainNameStatus_PENDING_OWNERSHIP_VERIFICATION DomainNameStatus = "PENDING_OWNERSHIP_VERIFICATION"
-	DomainNameStatus_UPDATING                       DomainNameStatus = "UPDATING"
+	DomainNameStatus_SDK_AVAILABLE                      DomainNameStatus_SDK = "AVAILABLE"
+	DomainNameStatus_SDK_PENDING                        DomainNameStatus_SDK = "PENDING"
+	DomainNameStatus_SDK_PENDING_CERTIFICATE_REIMPORT   DomainNameStatus_SDK = "PENDING_CERTIFICATE_REIMPORT"
+	DomainNameStatus_SDK_PENDING_OWNERSHIP_VERIFICATION DomainNameStatus_SDK = "PENDING_OWNERSHIP_VERIFICATION"
+	DomainNameStatus_SDK_UPDATING                       DomainNameStatus_SDK = "UPDATING"
 )
 
 type EndpointType string

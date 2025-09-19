@@ -111,24 +111,26 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 
 // PopulateResourceFromAnnotation populates the fields passed from adoption annotation
 func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) error {
-	tmp, ok := fields["resourceID"]
+	primaryKey, ok := fields["resourceID"]
 	if !ok {
 		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: resourceID"))
 	}
-	r.ko.Spec.ResourceID = &tmp
-
-	f0, f0ok := fields["httpMethod"]
-	if f0ok {
-		r.ko.Spec.HTTPMethod = aws.String(f0)
+	r.ko.Spec.ResourceID = &primaryKey
+	f0, ok := fields["httpMethod"]
+	if !ok {
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: httpMethod"))
 	}
-	f2, f2ok := fields["restAPIID"]
-	if f2ok {
-		r.ko.Spec.RestAPIID = aws.String(f2)
+	r.ko.Spec.HTTPMethod = &f0
+	f2, ok := fields["restAPIID"]
+	if !ok {
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: restAPIID"))
 	}
-	f3, f3ok := fields["statusCode"]
-	if f3ok {
-		r.ko.Spec.StatusCode = aws.String(f3)
+	r.ko.Spec.RestAPIID = &f2
+	f3, ok := fields["statusCode"]
+	if !ok {
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: statusCode"))
 	}
+	r.ko.Spec.StatusCode = &f3
 
 	return nil
 }

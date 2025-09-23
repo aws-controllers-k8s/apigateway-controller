@@ -116,7 +116,7 @@ class TestStage:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
         assert k8s.wait_on_condition(
             ref,
-            condition.CONDITION_TYPE_RESOURCE_SYNCED,
+            condition.CONDITION_TYPE_READY,
             'True',
             wait_periods=MAX_WAIT_FOR_SYNCED_MINUTES,
         )

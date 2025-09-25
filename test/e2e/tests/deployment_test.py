@@ -73,7 +73,7 @@ def simple_deployment(apigateway_client, simple_integration):
     }
     k8s.wait_on_condition(
         ref,
-        condition.CONDITION_TYPE_RESOURCE_SYNCED,
+        condition.CONDITION_TYPE_READY,
         "True",
         wait_periods=60,
     )

@@ -106,10 +106,11 @@ class TestRestAPI:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
         assert k8s.wait_on_condition(
             ref,
-            condition.CONDITION_TYPE_TERMINAL,
-            "True",
+            condition.CONDITION_TYPE_READY,
+            "False",
             wait_periods=MAX_WAIT_FOR_SYNCED_MINUTES,
         )
+        condition.assert_terminal(ref)
 
         updates = {
             "spec": {
@@ -135,10 +136,6 @@ class TestRestAPI:
             condition.CONDITION_TYPE_READY,
             "True",
             wait_periods=MAX_WAIT_FOR_SYNCED_MINUTES,
-        )
-        assert (
-            k8s.get_resource_condition(
-                ref, condition.CONDITION_TYPE_TERMINAL) is None
         )
 
         aws_rest_api = apigateway_client.get_rest_api(restApiId=rest_api_id)

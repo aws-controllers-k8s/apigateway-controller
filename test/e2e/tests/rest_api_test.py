@@ -75,7 +75,7 @@ def simple_rest_api(apigateway_client) -> Tuple[k8s.CustomResourceReference, Dic
     assert k8s.get_resource_exists(ref)
     k8s.wait_on_condition(
         ref,
-        condition.CONDITION_TYPE_RESOURCE_SYNCED,
+        condition.CONDITION_TYPE_READY,
         "True",
         wait_periods=MAX_WAIT_FOR_SYNCED_MINUTES,
     )
@@ -132,7 +132,7 @@ class TestRestAPI:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
         assert k8s.wait_on_condition(
             ref,
-            condition.CONDITION_TYPE_RESOURCE_SYNCED,
+            condition.CONDITION_TYPE_READY,
             "True",
             wait_periods=MAX_WAIT_FOR_SYNCED_MINUTES,
         )

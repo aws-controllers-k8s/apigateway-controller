@@ -17,16 +17,15 @@ package stage
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -118,7 +117,7 @@ func newResourceDelta(
 			delta.Add("Spec.RestAPIID", a.ko.Spec.RestAPIID, b.ko.Spec.RestAPIID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.RestAPIRef, b.ko.Spec.RestAPIRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.RestAPIRef, b.ko.Spec.RestAPIRef) {
 		delta.Add("Spec.RestAPIRef", a.ko.Spec.RestAPIRef, b.ko.Spec.RestAPIRef)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.StageName, b.ko.Spec.StageName) {

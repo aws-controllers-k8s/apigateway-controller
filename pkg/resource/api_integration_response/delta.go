@@ -17,16 +17,15 @@ package api_integration_response
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -64,7 +63,7 @@ func newResourceDelta(
 			delta.Add("Spec.ResourceID", a.ko.Spec.ResourceID, b.ko.Spec.ResourceID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.ResourceRef, b.ko.Spec.ResourceRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.ResourceRef, b.ko.Spec.ResourceRef) {
 		delta.Add("Spec.ResourceRef", a.ko.Spec.ResourceRef, b.ko.Spec.ResourceRef)
 	}
 	if len(a.ko.Spec.ResponseParameters) != len(b.ko.Spec.ResponseParameters) {
@@ -88,7 +87,7 @@ func newResourceDelta(
 			delta.Add("Spec.RestAPIID", a.ko.Spec.RestAPIID, b.ko.Spec.RestAPIID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.RestAPIRef, b.ko.Spec.RestAPIRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.RestAPIRef, b.ko.Spec.RestAPIRef) {
 		delta.Add("Spec.RestAPIRef", a.ko.Spec.RestAPIRef, b.ko.Spec.RestAPIRef)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.SelectionPattern, b.ko.Spec.SelectionPattern) {

@@ -17,16 +17,15 @@ package integration
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -65,7 +64,7 @@ func newResourceDelta(
 			delta.Add("Spec.ConnectionID", a.ko.Spec.ConnectionID, b.ko.Spec.ConnectionID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.ConnectionRef, b.ko.Spec.ConnectionRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.ConnectionRef, b.ko.Spec.ConnectionRef) {
 		delta.Add("Spec.ConnectionRef", a.ko.Spec.ConnectionRef, b.ko.Spec.ConnectionRef)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ConnectionType, b.ko.Spec.ConnectionType) {
@@ -131,7 +130,7 @@ func newResourceDelta(
 			delta.Add("Spec.ResourceID", a.ko.Spec.ResourceID, b.ko.Spec.ResourceID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.ResourceRef, b.ko.Spec.ResourceRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.ResourceRef, b.ko.Spec.ResourceRef) {
 		delta.Add("Spec.ResourceRef", a.ko.Spec.ResourceRef, b.ko.Spec.ResourceRef)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.RestAPIID, b.ko.Spec.RestAPIID) {
@@ -141,7 +140,7 @@ func newResourceDelta(
 			delta.Add("Spec.RestAPIID", a.ko.Spec.RestAPIID, b.ko.Spec.RestAPIID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.RestAPIRef, b.ko.Spec.RestAPIRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.RestAPIRef, b.ko.Spec.RestAPIRef) {
 		delta.Add("Spec.RestAPIRef", a.ko.Spec.RestAPIRef, b.ko.Spec.RestAPIRef)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.TimeoutInMillis, b.ko.Spec.TimeoutInMillis) {

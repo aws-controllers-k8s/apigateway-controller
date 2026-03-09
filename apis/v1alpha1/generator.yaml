@@ -336,8 +336,6 @@ resources:
         is_primary_key: true
       Name:
         is_required: true
-      StageKeys:
-        list_of: StageKey
       Value:
         is_secret: true
     exceptions:

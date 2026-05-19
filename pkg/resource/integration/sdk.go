@@ -397,7 +397,7 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.TimeoutInMillis != nil {
 		timeoutInMillisCopy0 := *r.ko.Spec.TimeoutInMillis
 		if timeoutInMillisCopy0 > math.MaxInt32 || timeoutInMillisCopy0 < math.MinInt32 {
-			return nil, fmt.Errorf("error: field timeoutInMillis is of type int32")
+			return nil, fmt.Errorf("error: field TimeoutInMillis is of type int32")
 		}
 		timeoutInMillisCopy := int32(timeoutInMillisCopy0)
 		res.TimeoutInMillis = &timeoutInMillisCopy
@@ -620,6 +620,9 @@ func (rm *resourceManager) setStatusDefaults(
 	}
 	if ko.Status.ACKResourceMetadata.Region == nil {
 		ko.Status.ACKResourceMetadata.Region = &rm.awsRegion
+	}
+	if ko.Status.ACKResourceMetadata.Partition == nil {
+		ko.Status.ACKResourceMetadata.Partition = &rm.awsPartition
 	}
 	if ko.Status.ACKResourceMetadata.OwnerAccountID == nil {
 		ko.Status.ACKResourceMetadata.OwnerAccountID = &rm.awsAccountID

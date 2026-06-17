@@ -47,6 +47,9 @@ func updateIntegrationInput(desired, latest *resource, input *svcsdk.UpdateInteg
 	if delta.DifferentAt("Spec.HTTPMethod") {
 		patchSet.Replace("/httpMethod", desiredSpec.HTTPMethod)
 	}
+	if delta.DifferentAt("Spec.IntegrationTarget") {
+		patchSet.Replace("/integrationTarget", desiredSpec.IntegrationTarget)
+	}
 	if delta.DifferentAt("Spec.PassthroughBehavior") {
 		patchSet.Replace("/passthroughBehavior", desiredSpec.PassthroughBehavior)
 	}
@@ -55,6 +58,9 @@ func updateIntegrationInput(desired, latest *resource, input *svcsdk.UpdateInteg
 	}
 	if delta.DifferentAt("Spec.RequestTemplates") {
 		patchSet.ForMap("/requestTemplates", latestSpec.RequestTemplates, desiredSpec.RequestTemplates, true)
+	}
+	if delta.DifferentAt("Spec.ResponseTransferMode") {
+		patchSet.Replace("/responseTransferMode", desiredSpec.ResponseTransferMode)
 	}
 	if delta.DifferentAt("Spec.TimeoutInMillis") {
 		var val *string

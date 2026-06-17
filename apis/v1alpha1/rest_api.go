@@ -43,8 +43,11 @@ type RestAPISpec struct {
 	// endpoint. To require that clients use a custom domain name to invoke your
 	// API, disable the default endpoint
 	DisableExecuteAPIEndpoint *bool `json:"disableExecuteAPIEndpoint,omitempty"`
-	// The endpoint configuration of this RestApi showing the endpoint types of
-	// the API.
+	// The endpoint access mode of the RestApi. Only available for RestApis that
+	// use security policies that start with SecurityPolicy_.
+	EndpointAccessMode *string `json:"endpointAccessMode,omitempty"`
+	// The endpoint configuration of this RestApi showing the endpoint types and
+	// IP address types of the API.
 	EndpointConfiguration *EndpointConfiguration `json:"endpointConfiguration,omitempty"`
 	// A nullable integer that is used to enable compression (with non-negative
 	// between 0 and 10485760 (10M) bytes, inclusive) or disable compression (with
@@ -58,6 +61,8 @@ type RestAPISpec struct {
 	// A stringified JSON policy document that applies to this RestApi regardless
 	// of the caller and Method configuration.
 	Policy *string `json:"policy,omitempty"`
+	// The Transport Layer Security (TLS) version + cipher suite for this RestApi.
+	SecurityPolicy *string `json:"securityPolicy,omitempty"`
 	// The key-value map of strings. The valid character set is [a-zA-Z+-=._:/].
 	// The tag key can be up to 128 characters and must not start with aws:. The
 	// tag value can be up to 256 characters.
@@ -80,6 +85,13 @@ type RestAPIStatus struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
+	// The ApiStatus of the RestApi.
+	// +kubebuilder:validation:Optional
+	APIStatus *string `json:"apiStatus,omitempty"`
+	// The status message of the RestApi. When the status message is UPDATING you
+	// can still invoke it.
+	// +kubebuilder:validation:Optional
+	APIStatusMessage *string `json:"apiStatusMessage,omitempty"`
 	// The timestamp when the API was created.
 	// +kubebuilder:validation:Optional
 	CreatedDate *metav1.Time `json:"createdDate,omitempty"`

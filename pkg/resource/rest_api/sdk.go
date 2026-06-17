@@ -96,6 +96,16 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.APIKeySource = nil
 	}
+	if resp.ApiStatus != "" {
+		ko.Status.APIStatus = aws.String(string(resp.ApiStatus))
+	} else {
+		ko.Status.APIStatus = nil
+	}
+	if resp.ApiStatusMessage != nil {
+		ko.Status.APIStatusMessage = resp.ApiStatusMessage
+	} else {
+		ko.Status.APIStatusMessage = nil
+	}
 	if resp.BinaryMediaTypes != nil {
 		ko.Spec.BinaryMediaTypes = aws.StringSlice(resp.BinaryMediaTypes)
 	} else {
@@ -112,21 +122,29 @@ func (rm *resourceManager) sdkFind(
 		ko.Spec.Description = nil
 	}
 	ko.Spec.DisableExecuteAPIEndpoint = &resp.DisableExecuteApiEndpoint
+	if resp.EndpointAccessMode != "" {
+		ko.Spec.EndpointAccessMode = aws.String(string(resp.EndpointAccessMode))
+	} else {
+		ko.Spec.EndpointAccessMode = nil
+	}
 	if resp.EndpointConfiguration != nil {
-		f5 := &svcapitypes.EndpointConfiguration{}
+		f8 := &svcapitypes.EndpointConfiguration{}
+		if resp.EndpointConfiguration.IpAddressType != "" {
+			f8.IPAddressType = aws.String(string(resp.EndpointConfiguration.IpAddressType))
+		}
 		if resp.EndpointConfiguration.Types != nil {
-			f5f0 := []*string{}
-			for _, f5f0iter := range resp.EndpointConfiguration.Types {
-				var f5f0elem *string
-				f5f0elem = aws.String(string(f5f0iter))
-				f5f0 = append(f5f0, f5f0elem)
+			f8f1 := []*string{}
+			for _, f8f1iter := range resp.EndpointConfiguration.Types {
+				var f8f1elem *string
+				f8f1elem = aws.String(string(f8f1iter))
+				f8f1 = append(f8f1, f8f1elem)
 			}
-			f5.Types = f5f0
+			f8.Types = f8f1
 		}
 		if resp.EndpointConfiguration.VpcEndpointIds != nil {
-			f5.VPCEndpointIDs = aws.StringSlice(resp.EndpointConfiguration.VpcEndpointIds)
+			f8.VPCEndpointIDs = aws.StringSlice(resp.EndpointConfiguration.VpcEndpointIds)
 		}
-		ko.Spec.EndpointConfiguration = f5
+		ko.Spec.EndpointConfiguration = f8
 	} else {
 		ko.Spec.EndpointConfiguration = nil
 	}
@@ -155,6 +173,11 @@ func (rm *resourceManager) sdkFind(
 		ko.Status.RootResourceID = resp.RootResourceId
 	} else {
 		ko.Status.RootResourceID = nil
+	}
+	if resp.SecurityPolicy != "" {
+		ko.Spec.SecurityPolicy = aws.String(string(resp.SecurityPolicy))
+	} else {
+		ko.Spec.SecurityPolicy = nil
 	}
 	if resp.Tags != nil {
 		ko.Spec.Tags = aws.StringMap(resp.Tags)
@@ -233,6 +256,16 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.APIKeySource = nil
 	}
+	if resp.ApiStatus != "" {
+		ko.Status.APIStatus = aws.String(string(resp.ApiStatus))
+	} else {
+		ko.Status.APIStatus = nil
+	}
+	if resp.ApiStatusMessage != nil {
+		ko.Status.APIStatusMessage = resp.ApiStatusMessage
+	} else {
+		ko.Status.APIStatusMessage = nil
+	}
 	if resp.BinaryMediaTypes != nil {
 		ko.Spec.BinaryMediaTypes = aws.StringSlice(resp.BinaryMediaTypes)
 	} else {
@@ -249,21 +282,29 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.Description = nil
 	}
 	ko.Spec.DisableExecuteAPIEndpoint = &resp.DisableExecuteApiEndpoint
+	if resp.EndpointAccessMode != "" {
+		ko.Spec.EndpointAccessMode = aws.String(string(resp.EndpointAccessMode))
+	} else {
+		ko.Spec.EndpointAccessMode = nil
+	}
 	if resp.EndpointConfiguration != nil {
-		f5 := &svcapitypes.EndpointConfiguration{}
+		f8 := &svcapitypes.EndpointConfiguration{}
+		if resp.EndpointConfiguration.IpAddressType != "" {
+			f8.IPAddressType = aws.String(string(resp.EndpointConfiguration.IpAddressType))
+		}
 		if resp.EndpointConfiguration.Types != nil {
-			f5f0 := []*string{}
-			for _, f5f0iter := range resp.EndpointConfiguration.Types {
-				var f5f0elem *string
-				f5f0elem = aws.String(string(f5f0iter))
-				f5f0 = append(f5f0, f5f0elem)
+			f8f1 := []*string{}
+			for _, f8f1iter := range resp.EndpointConfiguration.Types {
+				var f8f1elem *string
+				f8f1elem = aws.String(string(f8f1iter))
+				f8f1 = append(f8f1, f8f1elem)
 			}
-			f5.Types = f5f0
+			f8.Types = f8f1
 		}
 		if resp.EndpointConfiguration.VpcEndpointIds != nil {
-			f5.VPCEndpointIDs = aws.StringSlice(resp.EndpointConfiguration.VpcEndpointIds)
+			f8.VPCEndpointIDs = aws.StringSlice(resp.EndpointConfiguration.VpcEndpointIds)
 		}
-		ko.Spec.EndpointConfiguration = f5
+		ko.Spec.EndpointConfiguration = f8
 	} else {
 		ko.Spec.EndpointConfiguration = nil
 	}
@@ -292,6 +333,11 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.RootResourceID = resp.RootResourceId
 	} else {
 		ko.Status.RootResourceID = nil
+	}
+	if resp.SecurityPolicy != "" {
+		ko.Spec.SecurityPolicy = aws.String(string(resp.SecurityPolicy))
+	} else {
+		ko.Spec.SecurityPolicy = nil
 	}
 	if resp.Tags != nil {
 		ko.Spec.Tags = aws.StringMap(resp.Tags)
@@ -336,21 +382,27 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.DisableExecuteAPIEndpoint != nil {
 		res.DisableExecuteApiEndpoint = *r.ko.Spec.DisableExecuteAPIEndpoint
 	}
+	if r.ko.Spec.EndpointAccessMode != nil {
+		res.EndpointAccessMode = svcsdktypes.EndpointAccessMode(*r.ko.Spec.EndpointAccessMode)
+	}
 	if r.ko.Spec.EndpointConfiguration != nil {
-		f5 := &svcsdktypes.EndpointConfiguration{}
+		f6 := &svcsdktypes.EndpointConfiguration{}
+		if r.ko.Spec.EndpointConfiguration.IPAddressType != nil {
+			f6.IpAddressType = svcsdktypes.IpAddressType(*r.ko.Spec.EndpointConfiguration.IPAddressType)
+		}
 		if r.ko.Spec.EndpointConfiguration.Types != nil {
-			f5f0 := []svcsdktypes.EndpointType{}
-			for _, f5f0iter := range r.ko.Spec.EndpointConfiguration.Types {
-				var f5f0elem string
-				f5f0elem = string(*f5f0iter)
-				f5f0 = append(f5f0, svcsdktypes.EndpointType(f5f0elem))
+			f6f1 := []svcsdktypes.EndpointType{}
+			for _, f6f1iter := range r.ko.Spec.EndpointConfiguration.Types {
+				var f6f1elem string
+				f6f1elem = string(*f6f1iter)
+				f6f1 = append(f6f1, svcsdktypes.EndpointType(f6f1elem))
 			}
-			f5.Types = f5f0
+			f6.Types = f6f1
 		}
 		if r.ko.Spec.EndpointConfiguration.VPCEndpointIDs != nil {
-			f5.VpcEndpointIds = aws.ToStringSlice(r.ko.Spec.EndpointConfiguration.VPCEndpointIDs)
+			f6.VpcEndpointIds = aws.ToStringSlice(r.ko.Spec.EndpointConfiguration.VPCEndpointIDs)
 		}
-		res.EndpointConfiguration = f5
+		res.EndpointConfiguration = f6
 	}
 	if r.ko.Spec.MinimumCompressionSize != nil {
 		minimumCompressionSizeCopy0 := *r.ko.Spec.MinimumCompressionSize
@@ -365,6 +417,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.Policy != nil {
 		res.Policy = r.ko.Spec.Policy
+	}
+	if r.ko.Spec.SecurityPolicy != nil {
+		res.SecurityPolicy = svcsdktypes.SecurityPolicy(*r.ko.Spec.SecurityPolicy)
 	}
 	if r.ko.Spec.Tags != nil {
 		res.Tags = aws.ToStringMap(r.ko.Spec.Tags)
@@ -426,6 +481,16 @@ func (rm *resourceManager) sdkUpdate(
 	} else {
 		ko.Spec.APIKeySource = nil
 	}
+	if resp.ApiStatus != "" {
+		ko.Status.APIStatus = aws.String(string(resp.ApiStatus))
+	} else {
+		ko.Status.APIStatus = nil
+	}
+	if resp.ApiStatusMessage != nil {
+		ko.Status.APIStatusMessage = resp.ApiStatusMessage
+	} else {
+		ko.Status.APIStatusMessage = nil
+	}
 	if resp.BinaryMediaTypes != nil {
 		ko.Spec.BinaryMediaTypes = aws.StringSlice(resp.BinaryMediaTypes)
 	} else {
@@ -442,21 +507,29 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Spec.Description = nil
 	}
 	ko.Spec.DisableExecuteAPIEndpoint = &resp.DisableExecuteApiEndpoint
+	if resp.EndpointAccessMode != "" {
+		ko.Spec.EndpointAccessMode = aws.String(string(resp.EndpointAccessMode))
+	} else {
+		ko.Spec.EndpointAccessMode = nil
+	}
 	if resp.EndpointConfiguration != nil {
-		f5 := &svcapitypes.EndpointConfiguration{}
+		f8 := &svcapitypes.EndpointConfiguration{}
+		if resp.EndpointConfiguration.IpAddressType != "" {
+			f8.IPAddressType = aws.String(string(resp.EndpointConfiguration.IpAddressType))
+		}
 		if resp.EndpointConfiguration.Types != nil {
-			f5f0 := []*string{}
-			for _, f5f0iter := range resp.EndpointConfiguration.Types {
-				var f5f0elem *string
-				f5f0elem = aws.String(string(f5f0iter))
-				f5f0 = append(f5f0, f5f0elem)
+			f8f1 := []*string{}
+			for _, f8f1iter := range resp.EndpointConfiguration.Types {
+				var f8f1elem *string
+				f8f1elem = aws.String(string(f8f1iter))
+				f8f1 = append(f8f1, f8f1elem)
 			}
-			f5.Types = f5f0
+			f8.Types = f8f1
 		}
 		if resp.EndpointConfiguration.VpcEndpointIds != nil {
-			f5.VPCEndpointIDs = aws.StringSlice(resp.EndpointConfiguration.VpcEndpointIds)
+			f8.VPCEndpointIDs = aws.StringSlice(resp.EndpointConfiguration.VpcEndpointIds)
 		}
-		ko.Spec.EndpointConfiguration = f5
+		ko.Spec.EndpointConfiguration = f8
 	} else {
 		ko.Spec.EndpointConfiguration = nil
 	}
@@ -485,6 +558,11 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Status.RootResourceID = resp.RootResourceId
 	} else {
 		ko.Status.RootResourceID = nil
+	}
+	if resp.SecurityPolicy != "" {
+		ko.Spec.SecurityPolicy = aws.String(string(resp.SecurityPolicy))
+	} else {
+		ko.Spec.SecurityPolicy = nil
 	}
 	if resp.Tags != nil {
 		ko.Spec.Tags = aws.StringMap(resp.Tags)

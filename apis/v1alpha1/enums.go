@@ -28,6 +28,15 @@ const (
 	APIKeysFormat_csv APIKeysFormat = "csv"
 )
 
+type APIStatus string
+
+const (
+	APIStatus_AVAILABLE APIStatus = "AVAILABLE"
+	APIStatus_FAILED    APIStatus = "FAILED"
+	APIStatus_PENDING   APIStatus = "PENDING"
+	APIStatus_UPDATING  APIStatus = "UPDATING"
+)
+
 type AccessAssociationSourceType string
 
 const (
@@ -100,10 +109,18 @@ type DomainNameStatus string
 
 const (
 	DomainNameStatus_AVAILABLE                      DomainNameStatus = "AVAILABLE"
+	DomainNameStatus_FAILED                         DomainNameStatus = "FAILED"
 	DomainNameStatus_PENDING                        DomainNameStatus = "PENDING"
 	DomainNameStatus_PENDING_CERTIFICATE_REIMPORT   DomainNameStatus = "PENDING_CERTIFICATE_REIMPORT"
 	DomainNameStatus_PENDING_OWNERSHIP_VERIFICATION DomainNameStatus = "PENDING_OWNERSHIP_VERIFICATION"
 	DomainNameStatus_UPDATING                       DomainNameStatus = "UPDATING"
+)
+
+type EndpointAccessMode string
+
+const (
+	EndpointAccessMode_BASIC  EndpointAccessMode = "BASIC"
+	EndpointAccessMode_STRICT EndpointAccessMode = "STRICT"
 )
 
 type EndpointType string
@@ -138,6 +155,13 @@ const (
 	GatewayResponseType_UNAUTHORIZED                   GatewayResponseType = "UNAUTHORIZED"
 	GatewayResponseType_UNSUPPORTED_MEDIA_TYPE         GatewayResponseType = "UNSUPPORTED_MEDIA_TYPE"
 	GatewayResponseType_WAF_FILTERED                   GatewayResponseType = "WAF_FILTERED"
+)
+
+type IPAddressType string
+
+const (
+	IPAddressType_dualstack IPAddressType = "dualstack"
+	IPAddressType_ipv4      IPAddressType = "ipv4"
 )
 
 type IntegrationType string
@@ -190,11 +214,36 @@ const (
 	ResourceOwner_SELF           ResourceOwner = "SELF"
 )
 
+type ResponseTransferMode string
+
+const (
+	ResponseTransferMode_BUFFERED ResponseTransferMode = "BUFFERED"
+	ResponseTransferMode_STREAM   ResponseTransferMode = "STREAM"
+)
+
+type RoutingMode string
+
+const (
+	RoutingMode_BASE_PATH_MAPPING_ONLY              RoutingMode = "BASE_PATH_MAPPING_ONLY"
+	RoutingMode_ROUTING_RULE_ONLY                   RoutingMode = "ROUTING_RULE_ONLY"
+	RoutingMode_ROUTING_RULE_THEN_BASE_PATH_MAPPING RoutingMode = "ROUTING_RULE_THEN_BASE_PATH_MAPPING"
+)
+
 type SecurityPolicy string
 
 const (
-	SecurityPolicy_TLS_1_0 SecurityPolicy = "TLS_1_0"
-	SecurityPolicy_TLS_1_2 SecurityPolicy = "TLS_1_2"
+	SecurityPolicy_SecurityPolicy_TLS12_2018_EDGE               SecurityPolicy = "SecurityPolicy_TLS12_2018_EDGE"
+	SecurityPolicy_SecurityPolicy_TLS12_PFS_2025_EDGE           SecurityPolicy = "SecurityPolicy_TLS12_PFS_2025_EDGE"
+	SecurityPolicy_SecurityPolicy_TLS13_1_2_2021_06             SecurityPolicy = "SecurityPolicy_TLS13_1_2_2021_06"
+	SecurityPolicy_SecurityPolicy_TLS13_1_2_FIPS_PFS_PQ_2025_09 SecurityPolicy = "SecurityPolicy_TLS13_1_2_FIPS_PFS_PQ_2025_09"
+	SecurityPolicy_SecurityPolicy_TLS13_1_2_FIPS_PQ_2025_09     SecurityPolicy = "SecurityPolicy_TLS13_1_2_FIPS_PQ_2025_09"
+	SecurityPolicy_SecurityPolicy_TLS13_1_2_PFS_PQ_2025_09      SecurityPolicy = "SecurityPolicy_TLS13_1_2_PFS_PQ_2025_09"
+	SecurityPolicy_SecurityPolicy_TLS13_1_2_PQ_2025_09          SecurityPolicy = "SecurityPolicy_TLS13_1_2_PQ_2025_09"
+	SecurityPolicy_SecurityPolicy_TLS13_1_3_2025_09             SecurityPolicy = "SecurityPolicy_TLS13_1_3_2025_09"
+	SecurityPolicy_SecurityPolicy_TLS13_1_3_FIPS_2025_09        SecurityPolicy = "SecurityPolicy_TLS13_1_3_FIPS_2025_09"
+	SecurityPolicy_SecurityPolicy_TLS13_2025_EDGE               SecurityPolicy = "SecurityPolicy_TLS13_2025_EDGE"
+	SecurityPolicy_TLS_1_0                                      SecurityPolicy = "TLS_1_0"
+	SecurityPolicy_TLS_1_2                                      SecurityPolicy = "TLS_1_2"
 )
 
 type UnauthorizedCacheControlHeaderStrategy string

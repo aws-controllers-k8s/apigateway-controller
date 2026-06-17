@@ -151,6 +151,11 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Status.IntegrationResponses = nil
 	}
+	if resp.IntegrationTarget != nil {
+		ko.Spec.IntegrationTarget = resp.IntegrationTarget
+	} else {
+		ko.Spec.IntegrationTarget = nil
+	}
 	if resp.PassthroughBehavior != nil {
 		ko.Spec.PassthroughBehavior = resp.PassthroughBehavior
 	} else {
@@ -166,12 +171,17 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.RequestTemplates = nil
 	}
+	if resp.ResponseTransferMode != "" {
+		ko.Spec.ResponseTransferMode = aws.String(string(resp.ResponseTransferMode))
+	} else {
+		ko.Spec.ResponseTransferMode = nil
+	}
 	timeoutInMillisCopy := int64(resp.TimeoutInMillis)
 	ko.Spec.TimeoutInMillis = &timeoutInMillisCopy
 	if resp.TlsConfig != nil {
-		f12 := &svcapitypes.TLSConfig{}
-		f12.InsecureSkipVerification = &resp.TlsConfig.InsecureSkipVerification
-		ko.Spec.TLSConfig = f12
+		f14 := &svcapitypes.TLSConfig{}
+		f14.InsecureSkipVerification = &resp.TlsConfig.InsecureSkipVerification
+		ko.Spec.TLSConfig = f14
 	} else {
 		ko.Spec.TLSConfig = nil
 	}
@@ -308,6 +318,11 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.IntegrationResponses = nil
 	}
+	if resp.IntegrationTarget != nil {
+		ko.Spec.IntegrationTarget = resp.IntegrationTarget
+	} else {
+		ko.Spec.IntegrationTarget = nil
+	}
 	if resp.PassthroughBehavior != nil {
 		ko.Spec.PassthroughBehavior = resp.PassthroughBehavior
 	} else {
@@ -323,12 +338,17 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.RequestTemplates = nil
 	}
+	if resp.ResponseTransferMode != "" {
+		ko.Spec.ResponseTransferMode = aws.String(string(resp.ResponseTransferMode))
+	} else {
+		ko.Spec.ResponseTransferMode = nil
+	}
 	timeoutInMillisCopy := int64(resp.TimeoutInMillis)
 	ko.Spec.TimeoutInMillis = &timeoutInMillisCopy
 	if resp.TlsConfig != nil {
-		f12 := &svcapitypes.TLSConfig{}
-		f12.InsecureSkipVerification = &resp.TlsConfig.InsecureSkipVerification
-		ko.Spec.TLSConfig = f12
+		f14 := &svcapitypes.TLSConfig{}
+		f14.InsecureSkipVerification = &resp.TlsConfig.InsecureSkipVerification
+		ko.Spec.TLSConfig = f14
 	} else {
 		ko.Spec.TLSConfig = nil
 	}
@@ -379,6 +399,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.IntegrationHTTPMethod != nil {
 		res.IntegrationHttpMethod = r.ko.Spec.IntegrationHTTPMethod
 	}
+	if r.ko.Spec.IntegrationTarget != nil {
+		res.IntegrationTarget = r.ko.Spec.IntegrationTarget
+	}
 	if r.ko.Spec.PassthroughBehavior != nil {
 		res.PassthroughBehavior = r.ko.Spec.PassthroughBehavior
 	}
@@ -391,23 +414,26 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.ResourceID != nil {
 		res.ResourceId = r.ko.Spec.ResourceID
 	}
+	if r.ko.Spec.ResponseTransferMode != nil {
+		res.ResponseTransferMode = svcsdktypes.ResponseTransferMode(*r.ko.Spec.ResponseTransferMode)
+	}
 	if r.ko.Spec.RestAPIID != nil {
 		res.RestApiId = r.ko.Spec.RestAPIID
 	}
 	if r.ko.Spec.TimeoutInMillis != nil {
 		timeoutInMillisCopy0 := *r.ko.Spec.TimeoutInMillis
 		if timeoutInMillisCopy0 > math.MaxInt32 || timeoutInMillisCopy0 < math.MinInt32 {
-			return nil, fmt.Errorf("error: field TimeoutInMillis is of type int32")
+			return nil, fmt.Errorf("error: field timeoutInMillis is of type int32")
 		}
 		timeoutInMillisCopy := int32(timeoutInMillisCopy0)
 		res.TimeoutInMillis = &timeoutInMillisCopy
 	}
 	if r.ko.Spec.TLSConfig != nil {
-		f14 := &svcsdktypes.TlsConfig{}
+		f16 := &svcsdktypes.TlsConfig{}
 		if r.ko.Spec.TLSConfig.InsecureSkipVerification != nil {
-			f14.InsecureSkipVerification = *r.ko.Spec.TLSConfig.InsecureSkipVerification
+			f16.InsecureSkipVerification = *r.ko.Spec.TLSConfig.InsecureSkipVerification
 		}
-		res.TlsConfig = f14
+		res.TlsConfig = f16
 	}
 	if r.ko.Spec.Type != nil {
 		res.Type = svcsdktypes.IntegrationType(*r.ko.Spec.Type)
@@ -509,6 +535,11 @@ func (rm *resourceManager) sdkUpdate(
 	} else {
 		ko.Status.IntegrationResponses = nil
 	}
+	if resp.IntegrationTarget != nil {
+		ko.Spec.IntegrationTarget = resp.IntegrationTarget
+	} else {
+		ko.Spec.IntegrationTarget = nil
+	}
 	if resp.PassthroughBehavior != nil {
 		ko.Spec.PassthroughBehavior = resp.PassthroughBehavior
 	} else {
@@ -524,12 +555,17 @@ func (rm *resourceManager) sdkUpdate(
 	} else {
 		ko.Spec.RequestTemplates = nil
 	}
+	if resp.ResponseTransferMode != "" {
+		ko.Spec.ResponseTransferMode = aws.String(string(resp.ResponseTransferMode))
+	} else {
+		ko.Spec.ResponseTransferMode = nil
+	}
 	timeoutInMillisCopy := int64(resp.TimeoutInMillis)
 	ko.Spec.TimeoutInMillis = &timeoutInMillisCopy
 	if resp.TlsConfig != nil {
-		f12 := &svcapitypes.TLSConfig{}
-		f12.InsecureSkipVerification = &resp.TlsConfig.InsecureSkipVerification
-		ko.Spec.TLSConfig = f12
+		f14 := &svcapitypes.TLSConfig{}
+		f14.InsecureSkipVerification = &resp.TlsConfig.InsecureSkipVerification
+		ko.Spec.TLSConfig = f14
 	} else {
 		ko.Spec.TLSConfig = nil
 	}

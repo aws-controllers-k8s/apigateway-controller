@@ -102,6 +102,13 @@ func newResourceDelta(
 			delta.Add("Spec.IntegrationHTTPMethod", a.ko.Spec.IntegrationHTTPMethod, b.ko.Spec.IntegrationHTTPMethod)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.IntegrationTarget, b.ko.Spec.IntegrationTarget) {
+		delta.Add("Spec.IntegrationTarget", a.ko.Spec.IntegrationTarget, b.ko.Spec.IntegrationTarget)
+	} else if a.ko.Spec.IntegrationTarget != nil && b.ko.Spec.IntegrationTarget != nil {
+		if *a.ko.Spec.IntegrationTarget != *b.ko.Spec.IntegrationTarget {
+			delta.Add("Spec.IntegrationTarget", a.ko.Spec.IntegrationTarget, b.ko.Spec.IntegrationTarget)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.PassthroughBehavior, b.ko.Spec.PassthroughBehavior) {
 		delta.Add("Spec.PassthroughBehavior", a.ko.Spec.PassthroughBehavior, b.ko.Spec.PassthroughBehavior)
 	} else if a.ko.Spec.PassthroughBehavior != nil && b.ko.Spec.PassthroughBehavior != nil {
@@ -132,6 +139,13 @@ func newResourceDelta(
 	}
 	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.ResourceRef, b.ko.Spec.ResourceRef) {
 		delta.Add("Spec.ResourceRef", a.ko.Spec.ResourceRef, b.ko.Spec.ResourceRef)
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.ResponseTransferMode, b.ko.Spec.ResponseTransferMode) {
+		delta.Add("Spec.ResponseTransferMode", a.ko.Spec.ResponseTransferMode, b.ko.Spec.ResponseTransferMode)
+	} else if a.ko.Spec.ResponseTransferMode != nil && b.ko.Spec.ResponseTransferMode != nil {
+		if *a.ko.Spec.ResponseTransferMode != *b.ko.Spec.ResponseTransferMode {
+			delta.Add("Spec.ResponseTransferMode", a.ko.Spec.ResponseTransferMode, b.ko.Spec.ResponseTransferMode)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.RestAPIID, b.ko.Spec.RestAPIID) {
 		delta.Add("Spec.RestAPIID", a.ko.Spec.RestAPIID, b.ko.Spec.RestAPIID)

@@ -58,6 +58,8 @@ type IntegrationSpec struct {
 	HTTPMethod *string `json:"httpMethod"`
 	// The HTTP method for the integration.
 	IntegrationHTTPMethod *string `json:"integrationHTTPMethod,omitempty"`
+	// The ALB or NLB listener to send the request to.
+	IntegrationTarget *string `json:"integrationTarget,omitempty"`
 	// Specifies the pass-through behavior for incoming requests based on the Content-Type
 	// header in the request, and the available mapping templates specified as the
 	// requestTemplates property on the Integration resource. There are three valid
@@ -80,12 +82,15 @@ type IntegrationSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	ResourceID  *string                                  `json:"resourceID,omitempty"`
 	ResourceRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"resourceRef,omitempty"`
+	// The response transfer mode of the integration.
+	ResponseTransferMode *string `json:"responseTransferMode,omitempty"`
 	// The string identifier of the associated RestApi.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	RestAPIID  *string                                  `json:"restAPIID,omitempty"`
 	RestAPIRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"restAPIRef,omitempty"`
 	// Custom timeout between 50 and 29,000 milliseconds. The default value is 29,000
-	// milliseconds or 29 seconds.
+	// milliseconds or 29 seconds. You can increase the default value to longer
+	// than 29 seconds for Regional or private APIs only.
 	TimeoutInMillis *int64     `json:"timeoutInMillis,omitempty"`
 	TLSConfig       *TLSConfig `json:"tlsConfig,omitempty"`
 	// Specifies a put integration input's type.

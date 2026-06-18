@@ -77,9 +77,23 @@ func newResourceDelta(
 			delta.Add("Spec.DisableExecuteAPIEndpoint", a.ko.Spec.DisableExecuteAPIEndpoint, b.ko.Spec.DisableExecuteAPIEndpoint)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.EndpointAccessMode, b.ko.Spec.EndpointAccessMode) {
+		delta.Add("Spec.EndpointAccessMode", a.ko.Spec.EndpointAccessMode, b.ko.Spec.EndpointAccessMode)
+	} else if a.ko.Spec.EndpointAccessMode != nil && b.ko.Spec.EndpointAccessMode != nil {
+		if *a.ko.Spec.EndpointAccessMode != *b.ko.Spec.EndpointAccessMode {
+			delta.Add("Spec.EndpointAccessMode", a.ko.Spec.EndpointAccessMode, b.ko.Spec.EndpointAccessMode)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.EndpointConfiguration, b.ko.Spec.EndpointConfiguration) {
 		delta.Add("Spec.EndpointConfiguration", a.ko.Spec.EndpointConfiguration, b.ko.Spec.EndpointConfiguration)
 	} else if a.ko.Spec.EndpointConfiguration != nil && b.ko.Spec.EndpointConfiguration != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.EndpointConfiguration.IPAddressType, b.ko.Spec.EndpointConfiguration.IPAddressType) {
+			delta.Add("Spec.EndpointConfiguration.IPAddressType", a.ko.Spec.EndpointConfiguration.IPAddressType, b.ko.Spec.EndpointConfiguration.IPAddressType)
+		} else if a.ko.Spec.EndpointConfiguration.IPAddressType != nil && b.ko.Spec.EndpointConfiguration.IPAddressType != nil {
+			if *a.ko.Spec.EndpointConfiguration.IPAddressType != *b.ko.Spec.EndpointConfiguration.IPAddressType {
+				delta.Add("Spec.EndpointConfiguration.IPAddressType", a.ko.Spec.EndpointConfiguration.IPAddressType, b.ko.Spec.EndpointConfiguration.IPAddressType)
+			}
+		}
 		if len(a.ko.Spec.EndpointConfiguration.Types) != len(b.ko.Spec.EndpointConfiguration.Types) {
 			delta.Add("Spec.EndpointConfiguration.Types", a.ko.Spec.EndpointConfiguration.Types, b.ko.Spec.EndpointConfiguration.Types)
 		} else if len(a.ko.Spec.EndpointConfiguration.Types) > 0 {
@@ -114,6 +128,13 @@ func newResourceDelta(
 	} else if a.ko.Spec.Policy != nil && b.ko.Spec.Policy != nil {
 		if *a.ko.Spec.Policy != *b.ko.Spec.Policy {
 			delta.Add("Spec.Policy", a.ko.Spec.Policy, b.ko.Spec.Policy)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.SecurityPolicy, b.ko.Spec.SecurityPolicy) {
+		delta.Add("Spec.SecurityPolicy", a.ko.Spec.SecurityPolicy, b.ko.Spec.SecurityPolicy)
+	} else if a.ko.Spec.SecurityPolicy != nil && b.ko.Spec.SecurityPolicy != nil {
+		if *a.ko.Spec.SecurityPolicy != *b.ko.Spec.SecurityPolicy {
+			delta.Add("Spec.SecurityPolicy", a.ko.Spec.SecurityPolicy, b.ko.Spec.SecurityPolicy)
 		}
 	}
 	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)

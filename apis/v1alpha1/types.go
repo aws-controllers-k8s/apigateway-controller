@@ -152,8 +152,10 @@ type DomainName struct {
 	DomainNameARN            *string      `json:"domainNameARN,omitempty"`
 	DomainNameID             *string      `json:"domainNameID,omitempty"`
 	DomainNameStatusMessage  *string      `json:"domainNameStatusMessage,omitempty"`
+	EndpointAccessMode       *string      `json:"endpointAccessMode,omitempty"`
 	// The endpoint configuration to indicate the types of endpoints an API (RestApi)
-	// or its custom domain name (DomainName) has.
+	// or its custom domain name (DomainName) has and the IP address types that
+	// can invoke it.
 	EndpointConfiguration               *EndpointConfiguration `json:"endpointConfiguration,omitempty"`
 	ManagementPolicy                    *string                `json:"managementPolicy,omitempty"`
 	OwnershipVerificationCertificateARN *string                `json:"ownershipVerificationCertificateARN,omitempty"`
@@ -162,6 +164,7 @@ type DomainName struct {
 	RegionalCertificateName             *string                `json:"regionalCertificateName,omitempty"`
 	RegionalDomainName                  *string                `json:"regionalDomainName,omitempty"`
 	RegionalHostedZoneID                *string                `json:"regionalHostedZoneID,omitempty"`
+	SecurityPolicy                      *string                `json:"securityPolicy,omitempty"`
 	Tags                                map[string]*string     `json:"tags,omitempty"`
 }
 
@@ -177,8 +180,10 @@ type DomainNameAccessAssociation struct {
 }
 
 // The endpoint configuration to indicate the types of endpoints an API (RestApi)
-// or its custom domain name (DomainName) has.
+// or its custom domain name (DomainName) has and the IP address types that
+// can invoke it.
 type EndpointConfiguration struct {
+	IPAddressType  *string   `json:"ipAddressType,omitempty"`
 	Types          []*string `json:"types,omitempty"`
 	VPCEndpointIDs []*string `json:"vpcEndpointIDs,omitempty"`
 	// Reference field for VPCEndpointIDs
@@ -207,9 +212,11 @@ type Integration_SDK struct {
 	Credentials          *string                         `json:"credentials,omitempty"`
 	HTTPMethod           *string                         `json:"httpMethod,omitempty"`
 	IntegrationResponses map[string]*IntegrationResponse `json:"integrationResponses,omitempty"`
+	IntegrationTarget    *string                         `json:"integrationTarget,omitempty"`
 	PassthroughBehavior  *string                         `json:"passthroughBehavior,omitempty"`
 	RequestParameters    map[string]*string              `json:"requestParameters,omitempty"`
 	RequestTemplates     map[string]*string              `json:"requestTemplates,omitempty"`
+	ResponseTransferMode *string                         `json:"responseTransferMode,omitempty"`
 	TimeoutInMillis      *int64                          `json:"timeoutInMillis,omitempty"`
 	// Specifies the TLS configuration for an integration.
 	TLSConfig *TLSConfig `json:"tlsConfig,omitempty"`
@@ -331,18 +338,23 @@ type Resource_SDK struct {
 // Represents a REST API.
 type RestAPI_SDK struct {
 	APIKeySource              *string      `json:"apiKeySource,omitempty"`
+	APIStatus                 *string      `json:"apiStatus,omitempty"`
+	APIStatusMessage          *string      `json:"apiStatusMessage,omitempty"`
 	BinaryMediaTypes          []*string    `json:"binaryMediaTypes,omitempty"`
 	CreatedDate               *metav1.Time `json:"createdDate,omitempty"`
 	Description               *string      `json:"description,omitempty"`
 	DisableExecuteAPIEndpoint *bool        `json:"disableExecuteAPIEndpoint,omitempty"`
+	EndpointAccessMode        *string      `json:"endpointAccessMode,omitempty"`
 	// The endpoint configuration to indicate the types of endpoints an API (RestApi)
-	// or its custom domain name (DomainName) has.
+	// or its custom domain name (DomainName) has and the IP address types that
+	// can invoke it.
 	EndpointConfiguration  *EndpointConfiguration `json:"endpointConfiguration,omitempty"`
 	ID                     *string                `json:"id,omitempty"`
 	MinimumCompressionSize *int64                 `json:"minimumCompressionSize,omitempty"`
 	Name                   *string                `json:"name,omitempty"`
 	Policy                 *string                `json:"policy,omitempty"`
 	RootResourceID         *string                `json:"rootResourceID,omitempty"`
+	SecurityPolicy         *string                `json:"securityPolicy,omitempty"`
 	Tags                   map[string]*string     `json:"tags,omitempty"`
 	Version                *string                `json:"version,omitempty"`
 	Warnings               []*string              `json:"warnings,omitempty"`

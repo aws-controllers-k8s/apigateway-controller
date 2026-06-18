@@ -72,11 +72,18 @@ spec:
                   endpoint. To require that clients use a custom domain name to invoke your
                   API, disable the default endpoint
                 type: boolean
+              endpointAccessMode:
+                description: |-
+                  The endpoint access mode of the RestApi. Only available for RestApis that
+                  use security policies that start with SecurityPolicy_.
+                type: string
               endpointConfiguration:
                 description: |-
-                  The endpoint configuration of this RestApi showing the endpoint types of
-                  the API.
+                  The endpoint configuration of this RestApi showing the endpoint types and
+                  IP address types of the API.
                 properties:
+                  ipAddressType:
+                    type: string
                   types:
                     items:
                       type: string
@@ -122,6 +129,10 @@ spec:
                 description: |-
                   A stringified JSON policy document that applies to this RestApi regardless
                   of the caller and Method configuration.
+                type: string
+              securityPolicy:
+                description: The Transport Layer Security (TLS) version + cipher suite
+                  for this RestApi.
                 type: string
               tags:
                 additionalProperties:
@@ -176,6 +187,14 @@ spec:
                 - ownerAccountID
                 - region
                 type: object
+              apiStatus:
+                description: The ApiStatus of the RestApi.
+                type: string
+              apiStatusMessage:
+                description: |-
+                  The status message of the RestApi. When the status message is UPDATING you
+                  can still invoke it.
+                type: string
               conditions:
                 description: |-
                   All CRs managed by ACK have a common `Status.Conditions` member that

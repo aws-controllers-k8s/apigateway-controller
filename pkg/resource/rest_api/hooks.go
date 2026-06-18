@@ -55,6 +55,16 @@ func updateRestAPIInput(desired, latest *resource, input *apigateway.UpdateRestA
 		}
 		patchSet.Replace("/disableExecuteApiEndpoint", aws.String(strconv.FormatBool(disable)))
 	}
+	if delta.DifferentAt("Spec.EndpointAccessMode") {
+		patchSet.Replace("/endpointAccessMode", desiredSpec.EndpointAccessMode)
+	}
+	if delta.DifferentAt("Spec.EndpointConfiguration.IPAddressType") {
+		var ipAddressType *string
+		if desiredSpec.EndpointConfiguration != nil {
+			ipAddressType = desiredSpec.EndpointConfiguration.IPAddressType
+		}
+		patchSet.Replace("/endpointConfiguration/ipAddressType", ipAddressType)
+	}
 	if delta.DifferentAt("Spec.EndpointConfiguration.Types") {
 		if desiredSpec.EndpointConfiguration == nil {
 			return errors.New("spec.endpointConfiguration.types is required")
@@ -90,6 +100,9 @@ func updateRestAPIInput(desired, latest *resource, input *apigateway.UpdateRestA
 	}
 	if delta.DifferentAt("Spec.Policy") {
 		patchSet.Replace("/policy", desiredSpec.Policy)
+	}
+	if delta.DifferentAt("Spec.SecurityPolicy") {
+		patchSet.Replace("/securityPolicy", desiredSpec.SecurityPolicy)
 	}
 	input.PatchOperations = patchSet.GetPatchOperations()
 	return nil

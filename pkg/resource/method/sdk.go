@@ -160,6 +160,9 @@ func (rm *resourceManager) sdkFind(
 			}
 			f5.IntegrationResponses = f5f7
 		}
+		if resp.MethodIntegration.IntegrationTarget != nil {
+			f5.IntegrationTarget = resp.MethodIntegration.IntegrationTarget
+		}
 		if resp.MethodIntegration.PassthroughBehavior != nil {
 			f5.PassthroughBehavior = resp.MethodIntegration.PassthroughBehavior
 		}
@@ -169,12 +172,15 @@ func (rm *resourceManager) sdkFind(
 		if resp.MethodIntegration.RequestTemplates != nil {
 			f5.RequestTemplates = aws.StringMap(resp.MethodIntegration.RequestTemplates)
 		}
+		if resp.MethodIntegration.ResponseTransferMode != "" {
+			f5.ResponseTransferMode = aws.String(string(resp.MethodIntegration.ResponseTransferMode))
+		}
 		timeoutInMillisCopy := int64(resp.MethodIntegration.TimeoutInMillis)
 		f5.TimeoutInMillis = &timeoutInMillisCopy
 		if resp.MethodIntegration.TlsConfig != nil {
-			f5f12 := &svcapitypes.TLSConfig{}
-			f5f12.InsecureSkipVerification = &resp.MethodIntegration.TlsConfig.InsecureSkipVerification
-			f5.TLSConfig = f5f12
+			f5f14 := &svcapitypes.TLSConfig{}
+			f5f14.InsecureSkipVerification = &resp.MethodIntegration.TlsConfig.InsecureSkipVerification
+			f5.TLSConfig = f5f14
 		}
 		if resp.MethodIntegration.Type != "" {
 			f5.Type = aws.String(string(resp.MethodIntegration.Type))
@@ -359,6 +365,9 @@ func (rm *resourceManager) sdkCreate(
 			}
 			f5.IntegrationResponses = f5f7
 		}
+		if resp.MethodIntegration.IntegrationTarget != nil {
+			f5.IntegrationTarget = resp.MethodIntegration.IntegrationTarget
+		}
 		if resp.MethodIntegration.PassthroughBehavior != nil {
 			f5.PassthroughBehavior = resp.MethodIntegration.PassthroughBehavior
 		}
@@ -368,12 +377,15 @@ func (rm *resourceManager) sdkCreate(
 		if resp.MethodIntegration.RequestTemplates != nil {
 			f5.RequestTemplates = aws.StringMap(resp.MethodIntegration.RequestTemplates)
 		}
+		if resp.MethodIntegration.ResponseTransferMode != "" {
+			f5.ResponseTransferMode = aws.String(string(resp.MethodIntegration.ResponseTransferMode))
+		}
 		timeoutInMillisCopy := int64(resp.MethodIntegration.TimeoutInMillis)
 		f5.TimeoutInMillis = &timeoutInMillisCopy
 		if resp.MethodIntegration.TlsConfig != nil {
-			f5f12 := &svcapitypes.TLSConfig{}
-			f5f12.InsecureSkipVerification = &resp.MethodIntegration.TlsConfig.InsecureSkipVerification
-			f5.TLSConfig = f5f12
+			f5f14 := &svcapitypes.TLSConfig{}
+			f5f14.InsecureSkipVerification = &resp.MethodIntegration.TlsConfig.InsecureSkipVerification
+			f5.TLSConfig = f5f14
 		}
 		if resp.MethodIntegration.Type != "" {
 			f5.Type = aws.String(string(resp.MethodIntegration.Type))
@@ -575,6 +587,9 @@ func (rm *resourceManager) sdkUpdate(
 			}
 			f5.IntegrationResponses = f5f7
 		}
+		if resp.MethodIntegration.IntegrationTarget != nil {
+			f5.IntegrationTarget = resp.MethodIntegration.IntegrationTarget
+		}
 		if resp.MethodIntegration.PassthroughBehavior != nil {
 			f5.PassthroughBehavior = resp.MethodIntegration.PassthroughBehavior
 		}
@@ -584,12 +599,15 @@ func (rm *resourceManager) sdkUpdate(
 		if resp.MethodIntegration.RequestTemplates != nil {
 			f5.RequestTemplates = aws.StringMap(resp.MethodIntegration.RequestTemplates)
 		}
+		if resp.MethodIntegration.ResponseTransferMode != "" {
+			f5.ResponseTransferMode = aws.String(string(resp.MethodIntegration.ResponseTransferMode))
+		}
 		timeoutInMillisCopy := int64(resp.MethodIntegration.TimeoutInMillis)
 		f5.TimeoutInMillis = &timeoutInMillisCopy
 		if resp.MethodIntegration.TlsConfig != nil {
-			f5f12 := &svcapitypes.TLSConfig{}
-			f5f12.InsecureSkipVerification = &resp.MethodIntegration.TlsConfig.InsecureSkipVerification
-			f5.TLSConfig = f5f12
+			f5f14 := &svcapitypes.TLSConfig{}
+			f5f14.InsecureSkipVerification = &resp.MethodIntegration.TlsConfig.InsecureSkipVerification
+			f5.TLSConfig = f5f14
 		}
 		if resp.MethodIntegration.Type != "" {
 			f5.Type = aws.String(string(resp.MethodIntegration.Type))

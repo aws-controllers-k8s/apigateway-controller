@@ -283,6 +283,8 @@ spec:
                           type: string
                       type: object
                     type: object
+                  integrationTarget:
+                    type: string
                   passthroughBehavior:
                     type: string
                   requestParameters:
@@ -293,6 +295,8 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  responseTransferMode:
+                    type: string
                   timeoutInMillis:
                     format: int64
                     type: integer

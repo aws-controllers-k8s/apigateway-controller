@@ -107,6 +107,8 @@ resources:
     fields:
       ID:
         is_primary_key: true
+      Policy:
+        is_iam_policy: true
       EndpointConfiguration.VPCEndpointIDs:
         references:
           resource: VPCEndpoint

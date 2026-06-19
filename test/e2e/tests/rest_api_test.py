@@ -151,3 +151,19 @@ class TestRestAPI:
             expected=expected_tags,
             actual=aws_rest_api["tags"],
         )
+
+        # Update the policy field with a different policy value
+        # to verify updates still work with is_iam_policy comparison
+        updates = {
+            "spec": {
+                "policy": '{"Version":"2012-10-17","Statement":[{"Effect":"Deny","Principal":"*","Action":"execute-api:Invoke","Resource":"*","Condition":{"IpAddress":{"aws:SourceIp":"192.0.2.0/24"}}}]}',
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        assert k8s.wait_on_condition(
+            ref,
+            condition.CONDITION_TYPE_RESOURCE_SYNCED,
+            "True",
+            wait_periods=MAX_WAIT_FOR_SYNCED_MINUTES,
+        )

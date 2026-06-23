@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/aws-controllers-k8s/ec2-controller v1.2.15
-	github.com/aws-controllers-k8s/runtime v0.59.1
+	github.com/aws-controllers-k8s/runtime v0.60.0
 	github.com/aws/aws-sdk-go v1.55.0
 	github.com/aws/aws-sdk-go-v2 v1.42.0
 	github.com/aws/aws-sdk-go-v2/service/apigateway v1.40.6

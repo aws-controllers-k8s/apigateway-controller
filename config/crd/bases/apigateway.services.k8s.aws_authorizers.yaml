@@ -55,6 +55,23 @@ spec:
                   role's Amazon Resource Name (ARN). To use resource-based permissions on the
                   Lambda function, specify null.
                 type: string
+              authorizerCredentialsRef:
+                description: "AWSResourceReferenceWrapper provides a wrapper around
+                  *AWSResourceReference\ntype to provide more user friendly syntax
+                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
+                  \ name: my-api"
+                properties:
+                  from:
+                    description: |-
+                      AWSResourceReference provides all the values necessary to reference another
+                      k8s resource for finding the identifier(Id/ARN/Name)
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    type: object
+                type: object
               authorizerResultTTLInSeconds:
                 description: |-
                   The TTL in seconds of cached authorizer results. If it equals 0, authorization
@@ -114,6 +131,25 @@ spec:
                   For a TOKEN or REQUEST authorizer, this is not defined.
                 items:
                   type: string
+                type: array
+              providerRefs:
+                items:
+                  description: "AWSResourceReferenceWrapper provides a wrapper around
+                    *AWSResourceReference\ntype to provide more user friendly syntax
+                    for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
+                    \ name: my-api"
+                  properties:
+                    from:
+                      description: |-
+                        AWSResourceReference provides all the values necessary to reference another
+                        k8s resource for finding the identifier(Id/ARN/Name)
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                  type: object
                 type: array
               restAPIID:
                 description: The string identifier of the associated RestApi.

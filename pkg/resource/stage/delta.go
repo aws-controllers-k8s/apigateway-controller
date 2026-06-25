@@ -96,6 +96,9 @@ func newResourceDelta(
 			delta.Add("Spec.DeploymentID", a.ko.Spec.DeploymentID, b.ko.Spec.DeploymentID)
 		}
 	}
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.DeploymentRef, b.ko.Spec.DeploymentRef) {
+		delta.Add("Spec.DeploymentRef", a.ko.Spec.DeploymentRef, b.ko.Spec.DeploymentRef)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Description, b.ko.Spec.Description) {
 		delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
 	} else if a.ko.Spec.Description != nil && b.ko.Spec.Description != nil {

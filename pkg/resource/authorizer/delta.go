@@ -56,6 +56,9 @@ func newResourceDelta(
 			delta.Add("Spec.AuthorizerCredentials", a.ko.Spec.AuthorizerCredentials, b.ko.Spec.AuthorizerCredentials)
 		}
 	}
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.AuthorizerCredentialsRef, b.ko.Spec.AuthorizerCredentialsRef) {
+		delta.Add("Spec.AuthorizerCredentialsRef", a.ko.Spec.AuthorizerCredentialsRef, b.ko.Spec.AuthorizerCredentialsRef)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.AuthorizerResultTTLInSeconds, b.ko.Spec.AuthorizerResultTTLInSeconds) {
 		delta.Add("Spec.AuthorizerResultTTLInSeconds", a.ko.Spec.AuthorizerResultTTLInSeconds, b.ko.Spec.AuthorizerResultTTLInSeconds)
 	} else if a.ko.Spec.AuthorizerResultTTLInSeconds != nil && b.ko.Spec.AuthorizerResultTTLInSeconds != nil {
@@ -97,6 +100,9 @@ func newResourceDelta(
 		if !ackcompare.SliceStringPEqual(a.ko.Spec.ProviderARNs, b.ko.Spec.ProviderARNs) {
 			delta.Add("Spec.ProviderARNs", a.ko.Spec.ProviderARNs, b.ko.Spec.ProviderARNs)
 		}
+	}
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.ProviderRefs, b.ko.Spec.ProviderRefs) {
+		delta.Add("Spec.ProviderRefs", a.ko.Spec.ProviderRefs, b.ko.Spec.ProviderRefs)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.RestAPIID, b.ko.Spec.RestAPIID) {
 		delta.Add("Spec.RestAPIID", a.ko.Spec.RestAPIID, b.ko.Spec.RestAPIID)

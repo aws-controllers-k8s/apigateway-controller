@@ -42,6 +42,10 @@ import (
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
+	if ko.Spec.CloneFromRef != nil {
+		ko.Spec.CloneFrom = nil
+	}
+
 	if ko.Spec.EndpointConfiguration != nil {
 		if len(ko.Spec.EndpointConfiguration.VPCEndpointRefs) > 0 {
 			ko.Spec.EndpointConfiguration.VPCEndpointIDs = nil
@@ -67,6 +71,12 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForCloneFrom(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForEndpointConfiguration_VPCEndpointIDs(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -80,10 +90,105 @@ func (rm *resourceManager) ResolveReferences(
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.RestAPI) error {
 
+	if ko.Spec.CloneFromRef != nil && ko.Spec.CloneFrom != nil {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("CloneFrom", "CloneFromRef")
+	}
+
 	if ko.Spec.EndpointConfiguration != nil {
 		if len(ko.Spec.EndpointConfiguration.VPCEndpointRefs) > 0 && len(ko.Spec.EndpointConfiguration.VPCEndpointIDs) > 0 {
 			return ackerr.ResourceReferenceAndIDNotSupportedFor("EndpointConfiguration.VPCEndpointIDs", "EndpointConfiguration.VPCEndpointRefs")
 		}
+	}
+	return nil
+}
+
+// resolveReferenceForCloneFrom reads the resource referenced
+// from CloneFromRef field and sets the CloneFrom
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForCloneFrom(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.RestAPI,
+) (hasReferences bool, err error) {
+	if ko.Spec.CloneFromRef != nil && ko.Spec.CloneFromRef.From != nil {
+		hasReferences = true
+		arr := ko.Spec.CloneFromRef.From
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: CloneFromRef")
+		}
+		namespace, err := ackrt.ResolveCrossNamespaceReference(
+			ctx,
+			rm.cfg.EnableCrossNamespace,
+			&ko.Status.Conditions,
+			ackrt.CrossNamespaceRefKindResource,
+			ko.ObjectMeta.GetNamespace(),
+			arr.Namespace,
+			*arr.Name,
+		)
+		if err != nil {
+			return hasReferences, err
+		}
+		obj := &svcapitypes.RestAPI{}
+		if err := getReferencedResourceState_RestAPI(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return hasReferences, err
+		}
+		ko.Spec.CloneFrom = (*string)(obj.Status.ID)
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_RestAPI looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_RestAPI(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.RestAPI,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"RestAPI",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"RestAPI",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"RestAPI",
+			namespace, name)
+	}
+	if obj.Status.ID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"RestAPI",
+			namespace, name,
+			"Status.ID")
 	}
 	return nil
 }

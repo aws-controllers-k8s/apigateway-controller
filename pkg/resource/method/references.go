@@ -38,6 +38,10 @@ import (
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
+	if ko.Spec.AuthorizerRef != nil {
+		ko.Spec.AuthorizerID = nil
+	}
+
 	if ko.Spec.ResourceRef != nil {
 		ko.Spec.ResourceID = nil
 	}
@@ -65,6 +69,12 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForAuthorizerID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForResourceID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -84,6 +94,10 @@ func (rm *resourceManager) ResolveReferences(
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.Method) error {
 
+	if ko.Spec.AuthorizerRef != nil && ko.Spec.AuthorizerID != nil {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("AuthorizerID", "AuthorizerRef")
+	}
+
 	if ko.Spec.ResourceRef != nil && ko.Spec.ResourceID != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("ResourceID", "ResourceRef")
 	}
@@ -96,6 +110,97 @@ func validateReferenceFields(ko *svcapitypes.Method) error {
 	}
 	if ko.Spec.RestAPIRef == nil && ko.Spec.RestAPIID == nil {
 		return ackerr.ResourceReferenceOrIDRequiredFor("RestAPIID", "RestAPIRef")
+	}
+	return nil
+}
+
+// resolveReferenceForAuthorizerID reads the resource referenced
+// from AuthorizerRef field and sets the AuthorizerID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForAuthorizerID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.Method,
+) (hasReferences bool, err error) {
+	if ko.Spec.AuthorizerRef != nil && ko.Spec.AuthorizerRef.From != nil {
+		hasReferences = true
+		arr := ko.Spec.AuthorizerRef.From
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: AuthorizerRef")
+		}
+		namespace, err := ackrt.ResolveCrossNamespaceReference(
+			ctx,
+			rm.cfg.EnableCrossNamespace,
+			&ko.Status.Conditions,
+			ackrt.CrossNamespaceRefKindResource,
+			ko.ObjectMeta.GetNamespace(),
+			arr.Namespace,
+			*arr.Name,
+		)
+		if err != nil {
+			return hasReferences, err
+		}
+		obj := &svcapitypes.Authorizer{}
+		if err := getReferencedResourceState_Authorizer(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return hasReferences, err
+		}
+		ko.Spec.AuthorizerID = (*string)(obj.Status.ID)
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_Authorizer looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_Authorizer(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.Authorizer,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Authorizer",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"Authorizer",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"Authorizer",
+			namespace, name)
+	}
+	if obj.Status.ID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"Authorizer",
+			namespace, name,
+			"Status.ID")
 	}
 	return nil
 }

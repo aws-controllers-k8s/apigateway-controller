@@ -88,6 +88,9 @@ func newResourceDelta(
 			delta.Add("Spec.Credentials", a.ko.Spec.Credentials, b.ko.Spec.Credentials)
 		}
 	}
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.CredentialsRef, b.ko.Spec.CredentialsRef) {
+		delta.Add("Spec.CredentialsRef", a.ko.Spec.CredentialsRef, b.ko.Spec.CredentialsRef)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.HTTPMethod, b.ko.Spec.HTTPMethod) {
 		delta.Add("Spec.HTTPMethod", a.ko.Spec.HTTPMethod, b.ko.Spec.HTTPMethod)
 	} else if a.ko.Spec.HTTPMethod != nil && b.ko.Spec.HTTPMethod != nil {

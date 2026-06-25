@@ -745,6 +745,11 @@ func (in *AuthorizerSpec) DeepCopyInto(out *AuthorizerSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.AuthorizerCredentialsRef != nil {
+		in, out := &in.AuthorizerCredentialsRef, &out.AuthorizerCredentialsRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.AuthorizerResultTTLInSeconds != nil {
 		in, out := &in.AuthorizerResultTTLInSeconds, &out.AuthorizerResultTTLInSeconds
 		*out = new(int64)
@@ -778,6 +783,17 @@ func (in *AuthorizerSpec) DeepCopyInto(out *AuthorizerSpec) {
 				in, out := &(*in)[i], &(*out)[i]
 				*out = new(string)
 				**out = **in
+			}
+		}
+	}
+	if in.ProviderRefs != nil {
+		in, out := &in.ProviderRefs, &out.ProviderRefs
+		*out = make([]*corev1alpha1.AWSResourceReferenceWrapper, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}
@@ -1817,6 +1833,11 @@ func (in *IntegrationSpec) DeepCopyInto(out *IntegrationSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.CredentialsRef != nil {
+		in, out := &in.CredentialsRef, &out.CredentialsRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.HTTPMethod != nil {
 		in, out := &in.HTTPMethod, &out.HTTPMethod
 		*out = new(string)
@@ -2341,6 +2362,11 @@ func (in *MethodSpec) DeepCopyInto(out *MethodSpec) {
 		in, out := &in.AuthorizerID, &out.AuthorizerID
 		*out = new(string)
 		**out = **in
+	}
+	if in.AuthorizerRef != nil {
+		in, out := &in.AuthorizerRef, &out.AuthorizerRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.HTTPMethod != nil {
 		in, out := &in.HTTPMethod, &out.HTTPMethod
@@ -3001,6 +3027,11 @@ func (in *RestAPISpec) DeepCopyInto(out *RestAPISpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.CloneFromRef != nil {
+		in, out := &in.CloneFromRef, &out.CloneFromRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Description != nil {
 		in, out := &in.Description, &out.Description
 		*out = new(string)
@@ -3372,6 +3403,11 @@ func (in *StageKey) DeepCopyInto(out *StageKey) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.RestAPIRef != nil {
+		in, out := &in.RestAPIRef, &out.RestAPIRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.StageName != nil {
 		in, out := &in.StageName, &out.StageName
 		*out = new(string)
@@ -3443,6 +3479,11 @@ func (in *StageSpec) DeepCopyInto(out *StageSpec) {
 		in, out := &in.DeploymentID, &out.DeploymentID
 		*out = new(string)
 		**out = **in
+	}
+	if in.DeploymentRef != nil {
+		in, out := &in.DeploymentRef, &out.DeploymentRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Description != nil {
 		in, out := &in.Description, &out.Description
@@ -3951,6 +3992,17 @@ func (in *VPCLinkSpec) DeepCopyInto(out *VPCLinkSpec) {
 				in, out := &(*in)[i], &(*out)[i]
 				*out = new(string)
 				**out = **in
+			}
+		}
+	}
+	if in.TargetRefs != nil {
+		in, out := &in.TargetRefs, &out.TargetRefs
+		*out = make([]*corev1alpha1.AWSResourceReferenceWrapper, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}

@@ -39,8 +39,8 @@ type VPCLinkSpec struct {
 	// The network load balancer must be owned by the same Amazon Web Services account
 	// of the API owner.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
-	// +kubebuilder:validation:Required
-	TargetARNs []*string `json:"targetARNs"`
+	TargetARNs []*string                                  `json:"targetARNs,omitempty"`
+	TargetRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"targetRefs,omitempty"`
 }
 
 // VPCLinkStatus defines the observed state of VPCLink

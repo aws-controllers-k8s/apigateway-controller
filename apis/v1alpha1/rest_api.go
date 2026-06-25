@@ -35,7 +35,8 @@ type RestAPISpec struct {
 	BinaryMediaTypes []*string `json:"binaryMediaTypes,omitempty"`
 	// The ID of the RestApi that you want to clone from.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
-	CloneFrom *string `json:"cloneFrom,omitempty"`
+	CloneFrom    *string                                  `json:"cloneFrom,omitempty"`
+	CloneFromRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"cloneFromRef,omitempty"`
 	// The description of the RestApi.
 	Description *string `json:"description,omitempty"`
 	// Specifies whether clients can invoke your API by using the default execute-api

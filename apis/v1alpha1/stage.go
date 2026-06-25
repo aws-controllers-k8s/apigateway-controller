@@ -34,8 +34,8 @@ type StageSpec struct {
 	// The canary deployment settings of this stage.
 	CanarySettings *CanarySettings `json:"canarySettings,omitempty"`
 	// The identifier of the Deployment resource for the Stage resource.
-	// +kubebuilder:validation:Required
-	DeploymentID *string `json:"deploymentID"`
+	DeploymentID  *string                                  `json:"deploymentID,omitempty"`
+	DeploymentRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"deploymentRef,omitempty"`
 	// The description of the Stage resource.
 	Description *string `json:"description,omitempty"`
 	// The version of the associated API documentation.

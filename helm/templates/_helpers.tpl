@@ -110,10 +110,34 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cognitoidentityprovider.services.k8s.aws
+  resources:
+  - userpools
+  - userpools/status
+  verbs:
+  - get
+  - list
+- apiGroups:
   - ec2.services.k8s.aws
   resources:
   - vpcendpoints
   - vpcendpoints/status
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - elbv2.services.k8s.aws
+  resources:
+  - loadbalancers
+  - loadbalancers/status
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - iam.services.k8s.aws
+  resources:
+  - roles
+  - roles/status
   verbs:
   - get
   - list

@@ -51,7 +51,8 @@ type IntegrationSpec struct {
 	// that the passthroughBehavior is configured to support payload pass-through.
 	ContentHandling *string `json:"contentHandling,omitempty"`
 	// Specifies whether credentials are required for a put integration.
-	Credentials *string `json:"credentials,omitempty"`
+	Credentials    *string                                  `json:"credentials,omitempty"`
+	CredentialsRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"credentialsRef,omitempty"`
 	// Specifies the HTTP method for the integration.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required

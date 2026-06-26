@@ -78,6 +78,10 @@ resources:
         is_primary_key: true
       TargetARNs:
         is_immutable: true
+        references:
+          resource: LoadBalancer
+          service_name: elbv2
+          path: Status.ACKResourceMetadata.ARN
     hooks:
       sdk_update_pre_build_request:
         template_path: hooks/vpc_link/sdk_update_pre_build_request.go.tpl
@@ -116,6 +120,9 @@ resources:
           path: Status.VPCEndpointID
       CloneFrom:
         is_immutable: true
+        references:
+          resource: RestAPI
+          path: Status.ID
       Version:
         is_immutable: true
     renames:
@@ -201,6 +208,11 @@ resources:
         references:
           resource: VPCLink
           path: Status.ID
+      Credentials:
+        references:
+          resource: Role
+          service_name: iam
+          path: Status.ACKResourceMetadata.ARN
     tags:
       ignore: true
     hooks:
@@ -224,6 +236,10 @@ resources:
           path: Status.ID
         is_required: true
         is_immutable: true
+      DeploymentID:
+        references:
+          resource: Deployment
+          path: Status.ID
       StageName:
         is_required: true
         is_immutable: true
@@ -265,6 +281,10 @@ resources:
         is_immutable: true
       MethodIntegration.Type:
         go_tag: json:"type,omitempty"
+      AuthorizerID:
+        references:
+          resource: Authorizer
+          path: Status.ID
     hooks:
       sdk_update_post_build_request:
         template_path: hooks/method/sdk_update_post_build_request.go.tpl
@@ -340,6 +360,10 @@ resources:
         is_required: true
       Value:
         is_secret: true
+      StageKeys.RestAPIID:
+        references:
+          resource: RestAPI
+          path: Status.ID
     exceptions:
       terminal_codes:
         - BadRequestException
@@ -405,6 +429,16 @@ resources:
           path: Status.ID
         is_required: true
         is_immutable: true
+      AuthorizerCredentials:
+        references:
+          resource: Role
+          service_name: iam
+          path: Status.ACKResourceMetadata.ARN
+      ProviderARNs:
+        references:
+          resource: UserPool
+          service_name: cognitoidentityprovider
+          path: Status.ACKResourceMetadata.ARN
       Type:
         go_tag: json:"type,omitempty"
     renames:

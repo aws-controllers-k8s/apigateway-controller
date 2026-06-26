@@ -69,6 +69,23 @@ spec:
                 description: The identifier of the Deployment resource for the Stage
                   resource.
                 type: string
+              deploymentRef:
+                description: "AWSResourceReferenceWrapper provides a wrapper around
+                  *AWSResourceReference\ntype to provide more user friendly syntax
+                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
+                  \ name: my-api"
+                properties:
+                  from:
+                    description: |-
+                      AWSResourceReference provides all the values necessary to reference another
+                      k8s resource for finding the identifier(Id/ARN/Name)
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    type: object
+                type: object
               description:
                 description: The description of the Stage resource.
                 type: string
@@ -127,7 +144,6 @@ spec:
                   match [A-Za-z0-9-._~:/?#&=,]+.
                 type: object
             required:
-            - deploymentID
             - stageName
             type: object
           status:

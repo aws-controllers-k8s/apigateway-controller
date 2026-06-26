@@ -23,6 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	cognitoidentityproviderapitypes "github.com/aws-controllers-k8s/cognitoidentityprovider-controller/apis/v1alpha1"
+	iamapitypes "github.com/aws-controllers-k8s/iam-controller/apis/v1alpha1"
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
@@ -31,12 +33,26 @@ import (
 	svcapitypes "github.com/aws-controllers-k8s/apigateway-controller/apis/v1alpha1"
 )
 
+// +kubebuilder:rbac:groups=iam.services.k8s.aws,resources=roles,verbs=get;list
+// +kubebuilder:rbac:groups=iam.services.k8s.aws,resources=roles/status,verbs=get;list
+
+// +kubebuilder:rbac:groups=cognitoidentityprovider.services.k8s.aws,resources=userpools,verbs=get;list
+// +kubebuilder:rbac:groups=cognitoidentityprovider.services.k8s.aws,resources=userpools/status,verbs=get;list
+
 // ClearResolvedReferences removes any reference values that were made
 // concrete in the spec. It returns a copy of the input AWSResource which
 // contains the original *Ref values, but none of their respective concrete
 // values.
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
+
+	if ko.Spec.AuthorizerCredentialsRef != nil {
+		ko.Spec.AuthorizerCredentials = nil
+	}
+
+	if len(ko.Spec.ProviderRefs) > 0 {
+		ko.Spec.ProviderARNs = nil
+	}
 
 	if ko.Spec.RestAPIRef != nil {
 		ko.Spec.RestAPIID = nil
@@ -61,6 +77,18 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForAuthorizerCredentials(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForProviderARNs(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForRestAPIID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -74,11 +102,206 @@ func (rm *resourceManager) ResolveReferences(
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.Authorizer) error {
 
+	if ko.Spec.AuthorizerCredentialsRef != nil && ko.Spec.AuthorizerCredentials != nil {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("AuthorizerCredentials", "AuthorizerCredentialsRef")
+	}
+
+	if len(ko.Spec.ProviderRefs) > 0 && len(ko.Spec.ProviderARNs) > 0 {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("ProviderARNs", "ProviderRefs")
+	}
+
 	if ko.Spec.RestAPIRef != nil && ko.Spec.RestAPIID != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("RestAPIID", "RestAPIRef")
 	}
 	if ko.Spec.RestAPIRef == nil && ko.Spec.RestAPIID == nil {
 		return ackerr.ResourceReferenceOrIDRequiredFor("RestAPIID", "RestAPIRef")
+	}
+	return nil
+}
+
+// resolveReferenceForAuthorizerCredentials reads the resource referenced
+// from AuthorizerCredentialsRef field and sets the AuthorizerCredentials
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForAuthorizerCredentials(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.Authorizer,
+) (hasReferences bool, err error) {
+	if ko.Spec.AuthorizerCredentialsRef != nil && ko.Spec.AuthorizerCredentialsRef.From != nil {
+		hasReferences = true
+		arr := ko.Spec.AuthorizerCredentialsRef.From
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: AuthorizerCredentialsRef")
+		}
+		namespace, err := ackrt.ResolveCrossNamespaceReference(
+			ctx,
+			rm.cfg.EnableCrossNamespace,
+			&ko.Status.Conditions,
+			ackrt.CrossNamespaceRefKindResource,
+			ko.ObjectMeta.GetNamespace(),
+			arr.Namespace,
+			*arr.Name,
+		)
+		if err != nil {
+			return hasReferences, err
+		}
+		obj := &iamapitypes.Role{}
+		if err := getReferencedResourceState_Role(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return hasReferences, err
+		}
+		ko.Spec.AuthorizerCredentials = (*string)(obj.Status.ACKResourceMetadata.ARN)
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_Role looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_Role(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *iamapitypes.Role,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Role",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"Role",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"Role",
+			namespace, name)
+	}
+	if obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"Role",
+			namespace, name,
+			"Status.ACKResourceMetadata.ARN")
+	}
+	return nil
+}
+
+// resolveReferenceForProviderARNs reads the resource referenced
+// from ProviderRefs field and sets the ProviderARNs
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForProviderARNs(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.Authorizer,
+) (hasReferences bool, err error) {
+	for _, f0iter := range ko.Spec.ProviderRefs {
+		if f0iter != nil && f0iter.From != nil {
+			hasReferences = true
+			arr := f0iter.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: ProviderRefs")
+			}
+			namespace, err := ackrt.ResolveCrossNamespaceReference(
+				ctx,
+				rm.cfg.EnableCrossNamespace,
+				&ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
+				ko.ObjectMeta.GetNamespace(),
+				arr.Namespace,
+				*arr.Name,
+			)
+			if err != nil {
+				return hasReferences, err
+			}
+			obj := &cognitoidentityproviderapitypes.UserPool{}
+			if err := getReferencedResourceState_UserPool(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			if ko.Spec.ProviderARNs == nil {
+				ko.Spec.ProviderARNs = make([]*string, 0, 1)
+			}
+			ko.Spec.ProviderARNs = append(ko.Spec.ProviderARNs, (*string)(obj.Status.ACKResourceMetadata.ARN))
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_UserPool looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_UserPool(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *cognitoidentityproviderapitypes.UserPool,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"UserPool",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"UserPool",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"UserPool",
+			namespace, name)
+	}
+	if obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"UserPool",
+			namespace, name,
+			"Status.ACKResourceMetadata.ARN")
 	}
 	return nil
 }

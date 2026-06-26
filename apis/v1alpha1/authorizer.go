@@ -33,7 +33,8 @@ type AuthorizerSpec struct {
 	// the authorizer. To specify an IAM role for API Gateway to assume, use the
 	// role's Amazon Resource Name (ARN). To use resource-based permissions on the
 	// Lambda function, specify null.
-	AuthorizerCredentials *string `json:"authorizerCredentials,omitempty"`
+	AuthorizerCredentials    *string                                  `json:"authorizerCredentials,omitempty"`
+	AuthorizerCredentialsRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"authorizerCredentialsRef,omitempty"`
 	// The TTL in seconds of cached authorizer results. If it equals 0, authorization
 	// caching is disabled. If it is greater than 0, API Gateway will cache authorizer
 	// responses. If this field is not set, the default value is 300. The maximum
@@ -80,7 +81,8 @@ type AuthorizerSpec struct {
 	// A list of the Amazon Cognito user pool ARNs for the COGNITO_USER_POOLS authorizer.
 	// Each element is of this format: arn:aws:cognito-idp:{region}:{account_id}:userpool/{user_pool_id}.
 	// For a TOKEN or REQUEST authorizer, this is not defined.
-	ProviderARNs []*string `json:"providerARNs,omitempty"`
+	ProviderARNs []*string                                  `json:"providerARNs,omitempty"`
+	ProviderRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"providerRefs,omitempty"`
 	// The string identifier of the associated RestApi.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	RestAPIID  *string                                  `json:"restAPIID,omitempty"`

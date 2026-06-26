@@ -379,7 +379,9 @@ type SDKType struct {
 // A reference to a unique stage identified in the format {restApiId}/{stage}.
 type StageKey struct {
 	RestAPIID *string `json:"restAPIID,omitempty"`
-	StageName *string `json:"stageName,omitempty"`
+	// Reference field for RestAPIID
+	RestAPIRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"restAPIRef,omitempty"`
+	StageName  *string                                  `json:"stageName,omitempty"`
 }
 
 // Represents a unique identifier for a version of a deployed RestApi that is

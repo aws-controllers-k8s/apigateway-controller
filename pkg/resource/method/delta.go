@@ -70,6 +70,9 @@ func newResourceDelta(
 			delta.Add("Spec.AuthorizerID", a.ko.Spec.AuthorizerID, b.ko.Spec.AuthorizerID)
 		}
 	}
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.AuthorizerRef, b.ko.Spec.AuthorizerRef) {
+		delta.Add("Spec.AuthorizerRef", a.ko.Spec.AuthorizerRef, b.ko.Spec.AuthorizerRef)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.HTTPMethod, b.ko.Spec.HTTPMethod) {
 		delta.Add("Spec.HTTPMethod", a.ko.Spec.HTTPMethod, b.ko.Spec.HTTPMethod)
 	} else if a.ko.Spec.HTTPMethod != nil && b.ko.Spec.HTTPMethod != nil {

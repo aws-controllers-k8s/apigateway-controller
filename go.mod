@@ -3,9 +3,12 @@ module github.com/aws-controllers-k8s/apigateway-controller
 go 1.25.0
 
 require (
+	github.com/aws-controllers-k8s/cognitoidentityprovider-controller v1.3.1
 	github.com/aws-controllers-k8s/ec2-controller v1.2.15
+	github.com/aws-controllers-k8s/elbv2-controller v1.5.1
+	github.com/aws-controllers-k8s/iam-controller v1.7.2
 	github.com/aws-controllers-k8s/runtime v0.60.0
-	github.com/aws/aws-sdk-go v1.55.0
+	github.com/aws/aws-sdk-go v1.55.5
 	github.com/aws/aws-sdk-go-v2 v1.42.0
 	github.com/aws/aws-sdk-go-v2/service/apigateway v1.40.6
 	github.com/aws/smithy-go v1.27.1

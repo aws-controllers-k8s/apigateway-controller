@@ -17,9 +17,15 @@ package api_key
 
 import (
 	"context"
+	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
+	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/apigateway-controller/apis/v1alpha1"
@@ -31,6 +37,12 @@ import (
 // values.
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
+
+	for f0idx, f0iter := range ko.Spec.StageKeys {
+		if f0iter.RestAPIRef != nil {
+			ko.Spec.StageKeys[f0idx].RestAPIID = nil
+		}
+	}
 
 	return &resource{ko}
 }
@@ -47,11 +59,120 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-	return res, false, nil
+	ko := rm.concreteResource(res).ko
+
+	resourceHasReferences := false
+	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForStageKeys_RestAPIID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	return &resource{ko}, resourceHasReferences, err
 }
 
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.APIKey) error {
+
+	for _, f0iter := range ko.Spec.StageKeys {
+		if f0iter.RestAPIRef != nil && f0iter.RestAPIID != nil {
+			return ackerr.ResourceReferenceAndIDNotSupportedFor("StageKeys.RestAPIID", "StageKeys.RestAPIRef")
+		}
+	}
+	return nil
+}
+
+// resolveReferenceForStageKeys_RestAPIID reads the resource referenced
+// from StageKeys.RestAPIRef field and sets the StageKeys.RestAPIID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForStageKeys_RestAPIID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.APIKey,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.StageKeys {
+		if f0iter.RestAPIRef != nil && f0iter.RestAPIRef.From != nil {
+			hasReferences = true
+			arr := f0iter.RestAPIRef.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: StageKeys.RestAPIRef")
+			}
+			namespace, err := ackrt.ResolveCrossNamespaceReference(
+				ctx,
+				rm.cfg.EnableCrossNamespace,
+				&ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
+				ko.ObjectMeta.GetNamespace(),
+				arr.Namespace,
+				*arr.Name,
+			)
+			if err != nil {
+				return hasReferences, err
+			}
+			obj := &svcapitypes.RestAPI{}
+			if err := getReferencedResourceState_RestAPI(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			ko.Spec.StageKeys[f0idx].RestAPIID = (*string)(obj.Status.ID)
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_RestAPI looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_RestAPI(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.RestAPI,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"RestAPI",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"RestAPI",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"RestAPI",
+			namespace, name)
+	}
+	if obj.Status.ID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"RestAPI",
+			namespace, name,
+			"Status.ID")
+	}
 	return nil
 }

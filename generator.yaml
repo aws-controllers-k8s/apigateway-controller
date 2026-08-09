@@ -240,6 +240,36 @@ resources:
         references:
           resource: Deployment
           path: Status.ID
+      # CanarySettings carries a reference on its deploymentID member, so the
+      # Create and Update responses must not be written back over the struct:
+      # the response carries the resolved concrete value but not the
+      # deploymentRef companion, and writing it back would drop the reference
+      # from the spec after the first reconcile. Suppressing the write-back in
+      # turn stops the AWS-assigned canary defaults from landing in the spec,
+      # which is what late_initialize below absorbs instead - on the struct
+      # itself for the nil-parent case, and on each defaulted leaf for the
+      # partially-supplied case. skip_incomplete_check keeps a legitimately
+      # absent canary configuration from blocking ACK.ResourceSynced.
+      CanarySettings:
+        late_initialize:
+          skip_incomplete_check: {}
+        set:
+          - method: Create
+            ignore: true
+          - method: Update
+            ignore: true
+      CanarySettings.DeploymentID:
+        late_initialize:
+          skip_incomplete_check: {}
+        references:
+          resource: Deployment
+          path: Status.ID
+      CanarySettings.PercentTraffic:
+        late_initialize:
+          skip_incomplete_check: {}
+      CanarySettings.UseStageCache:
+        late_initialize:
+          skip_incomplete_check: {}
       StageName:
         is_required: true
         is_immutable: true

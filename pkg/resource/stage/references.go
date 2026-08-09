@@ -38,6 +38,12 @@ import (
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
+	if ko.Spec.CanarySettings != nil {
+		if ko.Spec.CanarySettings.DeploymentRef != nil {
+			ko.Spec.CanarySettings.DeploymentID = nil
+		}
+	}
+
 	if ko.Spec.DeploymentRef != nil {
 		ko.Spec.DeploymentID = nil
 	}
@@ -65,6 +71,12 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForCanarySettings_DeploymentID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForDeploymentID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -84,6 +96,15 @@ func (rm *resourceManager) ResolveReferences(
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.Stage) error {
 
+	if ko.Spec.CanarySettings != nil {
+		if ko.Spec.CanarySettings.DeploymentRef != nil && ko.Spec.CanarySettings.DeploymentID != nil {
+			return ackerr.ResourceReferenceAndIDNotSupportedFor("CanarySettings.DeploymentID", "CanarySettings.DeploymentRef")
+		}
+		if ko.Spec.CanarySettings.DeploymentRef == nil && ko.Spec.CanarySettings.DeploymentID == nil {
+			return ackerr.ResourceReferenceOrIDRequiredFor("DeploymentID", "DeploymentRef")
+		}
+	}
+
 	if ko.Spec.DeploymentRef != nil && ko.Spec.DeploymentID != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("DeploymentID", "DeploymentRef")
 	}
@@ -100,38 +121,40 @@ func validateReferenceFields(ko *svcapitypes.Stage) error {
 	return nil
 }
 
-// resolveReferenceForDeploymentID reads the resource referenced
-// from DeploymentRef field and sets the DeploymentID
+// resolveReferenceForCanarySettings_DeploymentID reads the resource referenced
+// from CanarySettings.DeploymentRef field and sets the CanarySettings.DeploymentID
 // from referenced resource. Returns a boolean indicating whether a reference
 // contains references, or an error
-func (rm *resourceManager) resolveReferenceForDeploymentID(
+func (rm *resourceManager) resolveReferenceForCanarySettings_DeploymentID(
 	ctx context.Context,
 	apiReader client.Reader,
 	ko *svcapitypes.Stage,
 ) (hasReferences bool, err error) {
-	if ko.Spec.DeploymentRef != nil && ko.Spec.DeploymentRef.From != nil {
-		hasReferences = true
-		arr := ko.Spec.DeploymentRef.From
-		if arr.Name == nil || *arr.Name == "" {
-			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: DeploymentRef")
+	if ko.Spec.CanarySettings != nil {
+		if ko.Spec.CanarySettings.DeploymentRef != nil && ko.Spec.CanarySettings.DeploymentRef.From != nil {
+			hasReferences = true
+			arr := ko.Spec.CanarySettings.DeploymentRef.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: CanarySettings.DeploymentRef")
+			}
+			namespace, err := ackrt.ResolveCrossNamespaceReference(
+				ctx,
+				rm.cfg.EnableCrossNamespace,
+				&ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
+				ko.ObjectMeta.GetNamespace(),
+				arr.Namespace,
+				*arr.Name,
+			)
+			if err != nil {
+				return hasReferences, err
+			}
+			obj := &svcapitypes.Deployment{}
+			if err := getReferencedResourceState_Deployment(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			ko.Spec.CanarySettings.DeploymentID = (*string)(obj.Status.ID)
 		}
-		namespace, err := ackrt.ResolveCrossNamespaceReference(
-			ctx,
-			rm.cfg.EnableCrossNamespace,
-			&ko.Status.Conditions,
-			ackrt.CrossNamespaceRefKindResource,
-			ko.ObjectMeta.GetNamespace(),
-			arr.Namespace,
-			*arr.Name,
-		)
-		if err != nil {
-			return hasReferences, err
-		}
-		obj := &svcapitypes.Deployment{}
-		if err := getReferencedResourceState_Deployment(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-			return hasReferences, err
-		}
-		ko.Spec.DeploymentID = (*string)(obj.Status.ID)
 	}
 
 	return hasReferences, nil
@@ -189,6 +212,43 @@ func getReferencedResourceState_Deployment(
 			"Status.ID")
 	}
 	return nil
+}
+
+// resolveReferenceForDeploymentID reads the resource referenced
+// from DeploymentRef field and sets the DeploymentID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForDeploymentID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.Stage,
+) (hasReferences bool, err error) {
+	if ko.Spec.DeploymentRef != nil && ko.Spec.DeploymentRef.From != nil {
+		hasReferences = true
+		arr := ko.Spec.DeploymentRef.From
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: DeploymentRef")
+		}
+		namespace, err := ackrt.ResolveCrossNamespaceReference(
+			ctx,
+			rm.cfg.EnableCrossNamespace,
+			&ko.Status.Conditions,
+			ackrt.CrossNamespaceRefKindResource,
+			ko.ObjectMeta.GetNamespace(),
+			arr.Namespace,
+			*arr.Name,
+		)
+		if err != nil {
+			return hasReferences, err
+		}
+		obj := &svcapitypes.Deployment{}
+		if err := getReferencedResourceState_Deployment(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return hasReferences, err
+		}
+		ko.Spec.DeploymentID = (*string)(obj.Status.ID)
+	}
+
+	return hasReferences, nil
 }
 
 // resolveReferenceForRestAPIID reads the resource referenced

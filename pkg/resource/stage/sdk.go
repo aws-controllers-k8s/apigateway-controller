@@ -287,20 +287,6 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.CacheClusterStatus = nil
 	}
-	if resp.CanarySettings != nil {
-		f4 := &svcapitypes.CanarySettings{}
-		if resp.CanarySettings.DeploymentId != nil {
-			f4.DeploymentID = resp.CanarySettings.DeploymentId
-		}
-		f4.PercentTraffic = &resp.CanarySettings.PercentTraffic
-		if resp.CanarySettings.StageVariableOverrides != nil {
-			f4.StageVariableOverrides = aws.StringMap(resp.CanarySettings.StageVariableOverrides)
-		}
-		f4.UseStageCache = &resp.CanarySettings.UseStageCache
-		ko.Spec.CanarySettings = f4
-	} else {
-		ko.Spec.CanarySettings = nil
-	}
 	if resp.ClientCertificateId != nil {
 		ko.Status.ClientCertificateID = resp.ClientCertificateId
 	} else {
@@ -506,20 +492,6 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Status.CacheClusterStatus = aws.String(string(resp.CacheClusterStatus))
 	} else {
 		ko.Status.CacheClusterStatus = nil
-	}
-	if resp.CanarySettings != nil {
-		f4 := &svcapitypes.CanarySettings{}
-		if resp.CanarySettings.DeploymentId != nil {
-			f4.DeploymentID = resp.CanarySettings.DeploymentId
-		}
-		f4.PercentTraffic = &resp.CanarySettings.PercentTraffic
-		if resp.CanarySettings.StageVariableOverrides != nil {
-			f4.StageVariableOverrides = aws.StringMap(resp.CanarySettings.StageVariableOverrides)
-		}
-		f4.UseStageCache = &resp.CanarySettings.UseStageCache
-		ko.Spec.CanarySettings = f4
-	} else {
-		ko.Spec.CanarySettings = nil
 	}
 	if resp.ClientCertificateId != nil {
 		ko.Status.ClientCertificateID = resp.ClientCertificateId

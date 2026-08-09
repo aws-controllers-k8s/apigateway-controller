@@ -87,10 +87,12 @@ type BasePathMapping struct {
 
 // Configuration settings of a canary deployment.
 type CanarySettings struct {
-	DeploymentID           *string            `json:"deploymentID,omitempty"`
-	PercentTraffic         *float64           `json:"percentTraffic,omitempty"`
-	StageVariableOverrides map[string]*string `json:"stageVariableOverrides,omitempty"`
-	UseStageCache          *bool              `json:"useStageCache,omitempty"`
+	DeploymentID *string `json:"deploymentID,omitempty"`
+	// Reference field for DeploymentID
+	DeploymentRef          *ackv1alpha1.AWSResourceReferenceWrapper `json:"deploymentRef,omitempty"`
+	PercentTraffic         *float64                                 `json:"percentTraffic,omitempty"`
+	StageVariableOverrides map[string]*string                       `json:"stageVariableOverrides,omitempty"`
+	UseStageCache          *bool                                    `json:"useStageCache,omitempty"`
 }
 
 // Represents a client certificate used to configure client-side SSL authentication

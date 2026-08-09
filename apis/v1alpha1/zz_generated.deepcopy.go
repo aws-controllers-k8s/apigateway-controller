@@ -969,6 +969,11 @@ func (in *CanarySettings) DeepCopyInto(out *CanarySettings) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.DeploymentRef != nil {
+		in, out := &in.DeploymentRef, &out.DeploymentRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.PercentTraffic != nil {
 		in, out := &in.PercentTraffic, &out.PercentTraffic
 		*out = new(float64)

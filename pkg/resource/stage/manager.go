@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=apigateway.services.k8s.aws,resources=stages,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apigateway.services.k8s.aws,resources=stages/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{}
+var lateInitializeFieldNames = []string{"CanarySettings", "DeploymentID", "PercentTraffic", "UseStageCache"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -260,7 +260,27 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 	observed acktypes.AWSResource,
 	latest acktypes.AWSResource,
 ) acktypes.AWSResource {
-	return latest
+	observedKo := rm.concreteResource(observed).ko.DeepCopy()
+	latestKo := rm.concreteResource(latest).ko.DeepCopy()
+	if observedKo.Spec.CanarySettings != nil && latestKo.Spec.CanarySettings == nil {
+		latestKo.Spec.CanarySettings = observedKo.Spec.CanarySettings
+	}
+	if observedKo.Spec.CanarySettings != nil && latestKo.Spec.CanarySettings != nil {
+		if observedKo.Spec.CanarySettings.DeploymentID != nil && latestKo.Spec.CanarySettings.DeploymentID == nil {
+			latestKo.Spec.CanarySettings.DeploymentID = observedKo.Spec.CanarySettings.DeploymentID
+		}
+	}
+	if observedKo.Spec.CanarySettings != nil && latestKo.Spec.CanarySettings != nil {
+		if observedKo.Spec.CanarySettings.PercentTraffic != nil && latestKo.Spec.CanarySettings.PercentTraffic == nil {
+			latestKo.Spec.CanarySettings.PercentTraffic = observedKo.Spec.CanarySettings.PercentTraffic
+		}
+	}
+	if observedKo.Spec.CanarySettings != nil && latestKo.Spec.CanarySettings != nil {
+		if observedKo.Spec.CanarySettings.UseStageCache != nil && latestKo.Spec.CanarySettings.UseStageCache == nil {
+			latestKo.Spec.CanarySettings.UseStageCache = observedKo.Spec.CanarySettings.UseStageCache
+		}
+	}
+	return &resource{latestKo}
 }
 
 // IsSynced returns true if the resource is synced.

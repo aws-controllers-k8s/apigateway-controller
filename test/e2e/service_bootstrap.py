@@ -30,7 +30,11 @@ def service_bootstrap() -> Resources:
 
     resources = BootstrapResources(
         NetworkLoadBalancer=NetworkLoadBalancer(
-            name_prefix='vpc-link-test', scheme='internal'),
+            name_prefix='vpc-link-test',
+            scheme='internal',
+            num_public_subnet=1,
+            num_private_subnet=1,
+        ),
         AuthorizerUserPool1=user_pool_1,
         AuthorizerUserPool2=user_pool_2,
     )

@@ -47,83 +47,80 @@ func TestNormalizeRestAPIPolicy(t *testing.T) {
 		description string
 		apiID       *string
 		policy      *string
-		want        string
+		want        *string
 	}{
 		{
 			description: "nil policy returns nil",
 			apiID:       aws.String(testAPIID),
 			policy:      nil,
+			want:        nil,
 		},
 		{
 			description: "plain shorthand is returned unchanged",
 			apiID:       aws.String(testAPIID),
 			policy:      aws.String(shorthandPolicy("/*")),
-			want:        shorthandPolicy("/*"),
+			want:        aws.String(shorthandPolicy("/*")),
 		},
 		{
 			description: "expanded ARN is normalised to shorthand",
 			apiID:       aws.String(testAPIID),
 			policy:      aws.String(expandedARNPolicy("*")),
-			want:        shorthandPolicy("/*"),
+			want:        aws.String(shorthandPolicy("/*")),
 		},
 		{
 			description: "URL-encoded expanded ARN is decoded and normalised",
 			apiID:       aws.String(testAPIID),
 			policy:      aws.String(url.QueryEscape(expandedARNPolicy("*"))),
-			want:        shorthandPolicy("/*"),
+			want:        aws.String(shorthandPolicy("/*")),
 		},
 		{
 			description: "ARN for a different API ID is not normalised",
 			apiID:       aws.String(testAPIID),
 			policy:      aws.String(`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Resource":"arn:aws:execute-api:us-east-1:123456789012:OTHER_API/*"}]}`),
-			want:        `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Resource":"arn:aws:execute-api:us-east-1:123456789012:OTHER_API/*"}]}`,
+			want:        aws.String(`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Resource":"arn:aws:execute-api:us-east-1:123456789012:OTHER_API/*"}]}`),
 		},
 		{
 			description: "nil API ID leaves expanded ARN unchanged",
 			apiID:       nil,
 			policy:      aws.String(expandedARNPolicy("*")),
-			want:        expandedARNPolicy("*"),
+			want:        aws.String(expandedARNPolicy("*")),
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			got := normalizeRestAPIPolicy(tt.apiID, tt.policy)
-			if tt.policy == nil {
-				assert.Nil(t, got)
-				return
-			}
-			assert.Equal(t, tt.want, *got)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestCustomPreCompare_PolicyNormalization(t *testing.T) {
 	for _, tt := range []struct {
-		description     string
-		desiredPolicy   *string
-		latestPolicy    *string
-		latestAPIID     *string
-		expectNoDelta   bool
+		description   string
+		desiredPolicy *string
+		latestPolicy  *string
+		latestAPIID   *string
+		expectDelta   bool
 	}{
 		{
 			description:   "shorthand vs expanded ARN produces no delta",
 			desiredPolicy: aws.String(shorthandPolicy("/*")),
 			latestPolicy:  aws.String(expandedARNPolicy("*")),
 			latestAPIID:   aws.String(testAPIID),
-			expectNoDelta: true,
+			expectDelta:   false,
 		},
 		{
 			description:   "URL-encoded expanded ARN vs shorthand produces no delta",
 			desiredPolicy: aws.String(shorthandPolicy("/*")),
 			latestPolicy:  aws.String(url.QueryEscape(expandedARNPolicy("*"))),
 			latestAPIID:   aws.String(testAPIID),
-			expectNoDelta: true,
+			expectDelta:   false,
 		},
 		{
 			description:   "genuine policy drift is still detected",
 			desiredPolicy: aws.String(`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"execute-api:Invoke","Resource":"execute-api:/*","Condition":{"IpAddress":{"aws:SourceIp":"10.0.0.0/8"}}}]}`),
 			latestPolicy:  aws.String(expandedARNPolicy("*")),
 			latestAPIID:   aws.String(testAPIID),
-			expectNoDelta: false,
+			expectDelta:   true,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
@@ -135,13 +132,7 @@ func TestCustomPreCompare_PolicyNormalization(t *testing.T) {
 				Status: svcapitypes.RestAPIStatus{ID: tt.latestAPIID},
 			}}
 			delta := newResourceDelta(desired, latest)
-			if tt.expectNoDelta {
-				assert.False(t, delta.DifferentAt("Spec.Policy"),
-					"expected no Spec.Policy delta but one was found")
-			} else {
-				assert.True(t, delta.DifferentAt("Spec.Policy"),
-					"expected Spec.Policy delta but none was found")
-			}
+			assert.Equal(t, tt.expectDelta, delta.DifferentAt("Spec.Policy"))
 		})
 	}
 }

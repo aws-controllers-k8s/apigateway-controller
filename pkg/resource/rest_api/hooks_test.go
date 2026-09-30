@@ -14,6 +14,7 @@
 package rest_api
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -24,6 +25,126 @@ import (
 
 	svcapitypes "github.com/aws-controllers-k8s/apigateway-controller/apis/v1alpha1"
 )
+
+const (
+	testAPIID = "abc123def0"
+	testRegion  = "us-east-1"
+	testAccount = "123456789012"
+)
+
+// shorthandPolicy returns a minimal resource policy using the execute-api shorthand.
+func shorthandPolicy(resource string) string {
+	return `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"execute-api:Invoke","Resource":"execute-api:` + resource + `"}]}`
+}
+
+// expandedARNPolicy returns the same policy with the concrete RestAPI ARN.
+func expandedARNPolicy(resource string) string {
+	return `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"execute-api:Invoke","Resource":"arn:aws:execute-api:` + testRegion + `:` + testAccount + `:` + testAPIID + `/` + resource + `"}]}`
+}
+
+func TestNormalizeRestAPIPolicy(t *testing.T) {
+	for _, tt := range []struct {
+		description string
+		apiID       *string
+		policy      *string
+		want        string
+	}{
+		{
+			description: "nil policy returns nil",
+			apiID:       aws.String(testAPIID),
+			policy:      nil,
+		},
+		{
+			description: "plain shorthand is returned unchanged",
+			apiID:       aws.String(testAPIID),
+			policy:      aws.String(shorthandPolicy("/*")),
+			want:        shorthandPolicy("/*"),
+		},
+		{
+			description: "expanded ARN is normalised to shorthand",
+			apiID:       aws.String(testAPIID),
+			policy:      aws.String(expandedARNPolicy("*")),
+			want:        shorthandPolicy("/*"),
+		},
+		{
+			description: "URL-encoded expanded ARN is decoded and normalised",
+			apiID:       aws.String(testAPIID),
+			policy:      aws.String(url.QueryEscape(expandedARNPolicy("*"))),
+			want:        shorthandPolicy("/*"),
+		},
+		{
+			description: "ARN for a different API ID is not normalised",
+			apiID:       aws.String(testAPIID),
+			policy:      aws.String(`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Resource":"arn:aws:execute-api:us-east-1:123456789012:OTHER_API/*"}]}`),
+			want:        `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Resource":"arn:aws:execute-api:us-east-1:123456789012:OTHER_API/*"}]}`,
+		},
+		{
+			description: "nil API ID leaves expanded ARN unchanged",
+			apiID:       nil,
+			policy:      aws.String(expandedARNPolicy("*")),
+			want:        expandedARNPolicy("*"),
+		},
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			got := normalizeRestAPIPolicy(tt.apiID, tt.policy)
+			if tt.policy == nil {
+				assert.Nil(t, got)
+				return
+			}
+			assert.Equal(t, tt.want, *got)
+		})
+	}
+}
+
+func TestCustomPreCompare_PolicyNormalization(t *testing.T) {
+	for _, tt := range []struct {
+		description     string
+		desiredPolicy   *string
+		latestPolicy    *string
+		latestAPIID     *string
+		expectNoDelta   bool
+	}{
+		{
+			description:   "shorthand vs expanded ARN produces no delta",
+			desiredPolicy: aws.String(shorthandPolicy("/*")),
+			latestPolicy:  aws.String(expandedARNPolicy("*")),
+			latestAPIID:   aws.String(testAPIID),
+			expectNoDelta: true,
+		},
+		{
+			description:   "URL-encoded expanded ARN vs shorthand produces no delta",
+			desiredPolicy: aws.String(shorthandPolicy("/*")),
+			latestPolicy:  aws.String(url.QueryEscape(expandedARNPolicy("*"))),
+			latestAPIID:   aws.String(testAPIID),
+			expectNoDelta: true,
+		},
+		{
+			description:   "genuine policy drift is still detected",
+			desiredPolicy: aws.String(`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"execute-api:Invoke","Resource":"execute-api:/*","Condition":{"IpAddress":{"aws:SourceIp":"10.0.0.0/8"}}}]}`),
+			latestPolicy:  aws.String(expandedARNPolicy("*")),
+			latestAPIID:   aws.String(testAPIID),
+			expectNoDelta: false,
+		},
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			desired := &resource{ko: &svcapitypes.RestAPI{
+				Spec: svcapitypes.RestAPISpec{Policy: tt.desiredPolicy},
+			}}
+			latest := &resource{ko: &svcapitypes.RestAPI{
+				Spec:   svcapitypes.RestAPISpec{Policy: tt.latestPolicy},
+				Status: svcapitypes.RestAPIStatus{ID: tt.latestAPIID},
+			}}
+			delta := newResourceDelta(desired, latest)
+			if tt.expectNoDelta {
+				assert.False(t, delta.DifferentAt("Spec.Policy"),
+					"expected no Spec.Policy delta but one was found")
+			} else {
+				assert.True(t, delta.DifferentAt("Spec.Policy"),
+					"expected Spec.Policy delta but none was found")
+			}
+		})
+	}
+}
 
 func TestUpdateRestAPIInput(t *testing.T) {
 	for _, tt := range []struct {

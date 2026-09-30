@@ -16,6 +16,8 @@ package rest_api
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"regexp"
 	"strconv"
 
 	"github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -114,4 +116,30 @@ func customPreCompare(a, b *resource) {
 	} else if a.ko.Spec.EndpointConfiguration != nil && b.ko.Spec.EndpointConfiguration == nil {
 		b.ko.Spec.EndpointConfiguration = &svcapitypes.EndpointConfiguration{}
 	}
+
+	if b.ko.Spec.Policy != nil {
+		b.ko.Spec.Policy = normalizeRestAPIPolicy(b.ko.Status.ID, b.ko.Spec.Policy)
+	}
+}
+
+// normalizeRestAPIPolicy URL-decodes the policy string returned by AWS (the
+// API Gateway REST API returns it percent-encoded) and replaces any concrete
+// execute-api ARN that refers to the current RestAPI with the portable
+// shorthand "execute-api:/<resource>", so that the delta check treats the
+// shorthand and the AWS-expanded form as equivalent.
+func normalizeRestAPIPolicy(apiID *string, policy *string) *string {
+	if policy == nil {
+		return nil
+	}
+	decoded, err := url.QueryUnescape(*policy)
+	if err != nil {
+		decoded = *policy
+	}
+	if apiID != nil && *apiID != "" {
+		re := regexp.MustCompile(
+			`arn:aws:execute-api:[^:]+:[^:]+:` + regexp.QuoteMeta(*apiID) + `/`,
+		)
+		decoded = re.ReplaceAllString(decoded, "execute-api:/")
+	}
+	return &decoded
 }

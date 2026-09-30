@@ -117,13 +117,6 @@ func customPreCompare(a, b *resource) {
 		b.ko.Spec.EndpointConfiguration = &svcapitypes.EndpointConfiguration{}
 	}
 
-	// Normalise the policy returned by AWS before the delta comparison.
-	// AWS returns the resource policy URL-encoded, and expands the portable
-	// shorthand "execute-api:/*" to the concrete RestAPI ARN
-	// "arn:aws:execute-api:<region>:<account>:<api-id>/*". Without normalisation
-	// these are never equal: the delta fires on every reconcile, creating an
-	// infinite patch loop. We normalise the observed (latest) policy only; the
-	// desired policy is left as the user authored it.
 	if b.ko.Spec.Policy != nil {
 		b.ko.Spec.Policy = normalizeRestAPIPolicy(b.ko.Status.ID, b.ko.Spec.Policy)
 	}

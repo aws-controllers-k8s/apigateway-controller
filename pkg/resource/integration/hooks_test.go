@@ -60,6 +60,26 @@ func TestUpdateIntegrationInput(t *testing.T) {
 			},
 		},
 		{
+			description: "integrationHTTPMethod change patches /httpMethod",
+			desired:     svcapitypes.IntegrationSpec{HTTPMethod: aws.String("GET"), IntegrationHTTPMethod: aws.String("POST")},
+			latest:      svcapitypes.IntegrationSpec{HTTPMethod: aws.String("GET"), IntegrationHTTPMethod: aws.String("GET")},
+			deltaPaths:  []string{"Spec.IntegrationHTTPMethod"},
+			expectedPatchOps: []apigatewaytypes.PatchOperation{
+				{
+					Op:    apigatewaytypes.OpReplace,
+					Path:  aws.String("/httpMethod"),
+					Value: aws.String("POST"),
+				},
+			},
+		},
+		{
+			description:      "httpMethod delta does not patch the integration method",
+			desired:          svcapitypes.IntegrationSpec{HTTPMethod: aws.String("GET"), IntegrationHTTPMethod: aws.String("POST")},
+			latest:           svcapitypes.IntegrationSpec{HTTPMethod: aws.String("POST"), IntegrationHTTPMethod: aws.String("POST")},
+			deltaPaths:       []string{"Spec.HTTPMethod"},
+			expectedPatchOps: nil,
+		},
+		{
 			description:      "no delta produces no patch operations",
 			desired:          svcapitypes.IntegrationSpec{IntegrationTarget: aws.String("arn:listener")},
 			latest:           svcapitypes.IntegrationSpec{IntegrationTarget: aws.String("arn:listener")},

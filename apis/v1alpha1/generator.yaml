@@ -201,6 +201,13 @@ resources:
       HTTPMethod:
         is_required: true
         is_immutable: true
+        # GetIntegration/PutIntegration/UpdateIntegration return the
+        # integration's HTTP method (Spec.IntegrationHTTPMethod) in the
+        # httpMethod field, not the method request's HTTP method. Copying it
+        # into Spec.HTTPMethod made the controller patch the integration
+        # method back to the method request's value on every resync.
+        set:
+          - ignore: true
       Type:
         is_immutable: true
         go_tag: json:"type,omitempty"
@@ -216,6 +223,8 @@ resources:
     tags:
       ignore: true
     hooks:
+      sdk_read_one_post_set_output:
+        template_path: hooks/integration/sdk_read_one_post_set_output.go.tpl
       sdk_update_post_build_request:
         template_path: hooks/integration/sdk_update_post_build_request.go.tpl
       delta_pre_compare:

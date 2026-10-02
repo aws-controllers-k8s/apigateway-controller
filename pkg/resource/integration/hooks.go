@@ -44,8 +44,10 @@ func updateIntegrationInput(desired, latest *resource, input *svcsdk.UpdateInteg
 	if delta.DifferentAt("Spec.ContentHandling") {
 		patchSet.Replace("/contentHandling", desiredSpec.ContentHandling)
 	}
-	if delta.DifferentAt("Spec.HTTPMethod") {
-		patchSet.Replace("/httpMethod", desiredSpec.HTTPMethod)
+	// In UpdateIntegration, /httpMethod is the integration's HTTP method.
+	// Spec.HTTPMethod identifies the method request and is immutable.
+	if delta.DifferentAt("Spec.IntegrationHTTPMethod") {
+		patchSet.Replace("/httpMethod", desiredSpec.IntegrationHTTPMethod)
 	}
 	if delta.DifferentAt("Spec.IntegrationTarget") {
 		patchSet.Replace("/integrationTarget", desiredSpec.IntegrationTarget)

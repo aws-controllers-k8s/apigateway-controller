@@ -121,11 +121,6 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.Credentials = nil
 	}
-	if resp.HttpMethod != nil {
-		ko.Spec.HTTPMethod = resp.HttpMethod
-	} else {
-		ko.Spec.HTTPMethod = nil
-	}
 	if resp.IntegrationResponses != nil {
 		f7 := map[string]*svcapitypes.IntegrationResponse{}
 		for f7key, f7valiter := range resp.IntegrationResponses {
@@ -197,6 +192,13 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	// GetIntegration returns the integration's HTTP method in httpMethod.
+	// Only track it when the user declared one, so integrations that leave it
+	// unset (for example MOCK) do not report drift.
+	if ko.Spec.IntegrationHTTPMethod != nil && resp.HttpMethod != nil {
+		ko.Spec.IntegrationHTTPMethod = resp.HttpMethod
+	}
+
 	return &resource{ko}, nil
 }
 
@@ -287,11 +289,6 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.Credentials = resp.Credentials
 	} else {
 		ko.Spec.Credentials = nil
-	}
-	if resp.HttpMethod != nil {
-		ko.Spec.HTTPMethod = resp.HttpMethod
-	} else {
-		ko.Spec.HTTPMethod = nil
 	}
 	if resp.IntegrationResponses != nil {
 		f7 := map[string]*svcapitypes.IntegrationResponse{}
@@ -504,11 +501,6 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Spec.Credentials = resp.Credentials
 	} else {
 		ko.Spec.Credentials = nil
-	}
-	if resp.HttpMethod != nil {
-		ko.Spec.HTTPMethod = resp.HttpMethod
-	} else {
-		ko.Spec.HTTPMethod = nil
 	}
 	if resp.IntegrationResponses != nil {
 		f7 := map[string]*svcapitypes.IntegrationResponse{}

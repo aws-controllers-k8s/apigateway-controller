@@ -18,8 +18,8 @@ import (
 	"strconv"
 
 	"github.com/aws-controllers-k8s/runtime/pkg/compare"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/apigateway"
-	"github.com/aws/aws-sdk-go/aws"
 
 	svcapitypes "github.com/aws-controllers-k8s/apigateway-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/apigateway-controller/pkg/tags"
@@ -29,8 +29,8 @@ import (
 
 var syncTags = tags.SyncTags
 
-func arnForResource(desired *svcapitypes.Stage) (string, error) {
-	return util.ARNForResource(desired.Status.ACKResourceMetadata,
+func arnForResource(desired *svcapitypes.Stage, partition string) string {
+	return util.ARNForResource(desired.Status.ACKResourceMetadata, partition,
 		fmt.Sprintf("/restapis/%s/stages/%s", *desired.Spec.RestAPIID, *desired.Spec.StageName))
 }
 

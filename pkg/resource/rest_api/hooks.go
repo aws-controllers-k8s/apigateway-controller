@@ -30,8 +30,8 @@ import (
 
 var syncTags = tags.SyncTags
 
-func arnForResource(desired *svcapitypes.RestAPI) (string, error) {
-	return util.ARNForResource(desired.Status.ACKResourceMetadata, fmt.Sprintf("/restapis/%s", *desired.Status.ID))
+func arnForResource(desired *svcapitypes.RestAPI, partition string) string {
+	return util.ARNForResource(desired.Status.ACKResourceMetadata, partition, fmt.Sprintf("/restapis/%s", *desired.Status.ID))
 }
 
 func updateRestAPIInput(desired, latest *resource, input *apigateway.UpdateRestApiInput, delta *compare.Delta) error {

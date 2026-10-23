@@ -74,6 +74,12 @@ func TestNormalizeRestAPIPolicy(t *testing.T) {
 			want:        aws.String(shorthandPolicy("/*")),
 		},
 		{
+			description: "GovCloud ARN (arn:aws-us-gov) is normalised to shorthand",
+			apiID:       aws.String(testAPIID),
+			policy:      aws.String(`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"execute-api:Invoke","Resource":"arn:aws-us-gov:execute-api:us-gov-west-1:` + testAccount + `:` + testAPIID + `/*"}]}`),
+			want:        aws.String(shorthandPolicy("/*")),
+		},
+		{
 			description: "ARN for a different API ID is not normalised",
 			apiID:       aws.String(testAPIID),
 			policy:      aws.String(`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Resource":"arn:aws:execute-api:us-east-1:123456789012:OTHER_API/*"}]}`),

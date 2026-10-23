@@ -137,7 +137,7 @@ func normalizeRestAPIPolicy(apiID *string, policy *string) *string {
 	}
 	if apiID != nil && *apiID != "" {
 		re := regexp.MustCompile(
-			`arn:aws:execute-api:[^:]+:[^:]+:` + regexp.QuoteMeta(*apiID) + `/`,
+			`arn:[^:]+:execute-api:[^:]+:[^:]+:` + regexp.QuoteMeta(*apiID) + `/`,
 		)
 		decoded = re.ReplaceAllString(decoded, "execute-api:/")
 	}

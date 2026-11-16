@@ -29,8 +29,8 @@ import (
 
 var syncTags = tags.SyncTags
 
-func arnForResource(desired *svcapitypes.VPCLink) (string, error) {
-	return util.ARNForResource(desired.Status.ACKResourceMetadata, fmt.Sprintf("/vpclinks/%s", *desired.Status.ID))
+func arnForResource(desired *svcapitypes.VPCLink, partition string) string {
+	return util.ARNForResource(desired.Status.ACKResourceMetadata, partition, fmt.Sprintf("/vpclinks/%s", *desired.Status.ID))
 }
 
 func validateDeleteState(r *resource) error {

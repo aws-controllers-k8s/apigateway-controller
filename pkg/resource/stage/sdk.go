@@ -380,6 +380,19 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	// The resource now exists in AWS and ko carries its identifiers. Mark any
+	// error from here on as a post-create failure so the reconciler retains the
+	// ACK finalizer, and return ko so those identifiers reach the CR status and
+	// the next reconciliation finds the resource instead of creating a second
+	// one. See https://github.com/aws-controllers-k8s/community/issues/2849.
+	defer func() {
+		if err != nil {
+			err = ackerr.WrapPostCreateError(err)
+			if created == nil {
+				created = &resource{ko}
+			}
+		}
+	}()
 	return &resource{ko}, nil
 }
 
@@ -455,10 +468,7 @@ func (rm *resourceManager) sdkUpdate(
 		exit(err)
 	}()
 	if delta.DifferentAt("Spec.Tags") {
-		resourceARN, err := arnForResource(desired.ko)
-		if err != nil {
-			return nil, fmt.Errorf("applying tags: %w", err)
-		}
+		resourceARN := arnForResource(desired.ko, string(rm.awsPartition))
 		if err := syncTags(ctx, rm.sdkapi, rm.metrics, resourceARN, desired.ko.Spec.Tags, latest.ko.Spec.Tags); err != nil {
 			return nil, err
 		}

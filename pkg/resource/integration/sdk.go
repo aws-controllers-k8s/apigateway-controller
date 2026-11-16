@@ -192,10 +192,11 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
-	// GetIntegration returns the integration's HTTP method in httpMethod.
-	// Only track it when the user declared one, so integrations that leave it
-	// unset (for example MOCK) do not report drift.
-	if ko.Spec.IntegrationHTTPMethod != nil && resp.HttpMethod != nil {
+	// GetIntegration returns the integration's HTTP method in httpMethod,
+	// not the method request's. Spec.HTTPMethod identifies the method request
+	// and is left as declared. MOCK integrations return no httpMethod, so
+	// keep the declared value rather than reporting drift.
+	if resp.HttpMethod != nil {
 		ko.Spec.IntegrationHTTPMethod = resp.HttpMethod
 	}
 

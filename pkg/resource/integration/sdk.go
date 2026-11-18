@@ -121,11 +121,6 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.Credentials = nil
 	}
-	if resp.HttpMethod != nil {
-		ko.Spec.HTTPMethod = resp.HttpMethod
-	} else {
-		ko.Spec.HTTPMethod = nil
-	}
 	if resp.IntegrationResponses != nil {
 		f7 := map[string]*svcapitypes.IntegrationResponse{}
 		for f7key, f7valiter := range resp.IntegrationResponses {
@@ -197,6 +192,14 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	// GetIntegration returns the integration's HTTP method in httpMethod,
+	// not the method request's. Spec.HTTPMethod identifies the method request
+	// and is left as declared. MOCK integrations return no httpMethod, so
+	// keep the declared value rather than reporting drift.
+	if resp.HttpMethod != nil {
+		ko.Spec.IntegrationHTTPMethod = resp.HttpMethod
+	}
+
 	return &resource{ko}, nil
 }
 
@@ -287,11 +290,6 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.Credentials = resp.Credentials
 	} else {
 		ko.Spec.Credentials = nil
-	}
-	if resp.HttpMethod != nil {
-		ko.Spec.HTTPMethod = resp.HttpMethod
-	} else {
-		ko.Spec.HTTPMethod = nil
 	}
 	if resp.IntegrationResponses != nil {
 		f7 := map[string]*svcapitypes.IntegrationResponse{}
@@ -517,11 +515,6 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Spec.Credentials = resp.Credentials
 	} else {
 		ko.Spec.Credentials = nil
-	}
-	if resp.HttpMethod != nil {
-		ko.Spec.HTTPMethod = resp.HttpMethod
-	} else {
-		ko.Spec.HTTPMethod = nil
 	}
 	if resp.IntegrationResponses != nil {
 		f7 := map[string]*svcapitypes.IntegrationResponse{}

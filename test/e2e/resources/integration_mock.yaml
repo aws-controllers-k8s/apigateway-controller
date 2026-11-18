@@ -1,0 +1,15 @@
+apiVersion: apigateway.services.k8s.aws/v1alpha1
+kind: Integration
+metadata:
+  name: $INTEGRATION_NAME
+spec:
+  restAPIRef:
+    from:
+      name: $REST_API_REF_NAME
+  resourceRef:
+    from:
+      name: $RESOURCE_REF_NAME
+  httpMethod: OPTIONS
+  type: MOCK
+  requestTemplates:
+    application/json: '{"statusCode": 200}'

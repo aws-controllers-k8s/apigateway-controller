@@ -1,0 +1,17 @@
+apiVersion: apigateway.services.k8s.aws/v1alpha1
+kind: Integration
+metadata:
+  name: $INTEGRATION_NAME
+spec:
+  restAPIRef:
+    from:
+      name: $REST_API_REF_NAME
+  resourceRef:
+    from:
+      name: $RESOURCE_REF_NAME
+  httpMethod: PUT
+  integrationHTTPMethod: POST
+  connectionType: INTERNET
+  timeoutInMillis: 1000
+  type: HTTP
+  uri: https://$INTEGRATION_NAME.com

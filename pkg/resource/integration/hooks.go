@@ -15,6 +15,7 @@ package integration
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/aws-controllers-k8s/runtime/pkg/compare"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -86,6 +87,17 @@ func updateIntegrationInput(desired, latest *resource, input *svcsdk.UpdateInteg
 }
 
 func customPreCompare(a, b *resource) {
+	// An unset integrationHTTPMethod is left unmanaged: UpdateIntegration
+	// rejects a valueless /httpMethod replace, and CRs that predate this
+	// field being compared (or adopt-or-create specs that omit it) must not
+	// go Terminal. API Gateway also stores the method upper-cased, so a
+	// case-only difference is not drift.
+	if a.ko.Spec.IntegrationHTTPMethod == nil {
+		b.ko.Spec.IntegrationHTTPMethod = nil
+	} else if b.ko.Spec.IntegrationHTTPMethod != nil &&
+		strings.EqualFold(*a.ko.Spec.IntegrationHTTPMethod, *b.ko.Spec.IntegrationHTTPMethod) {
+		b.ko.Spec.IntegrationHTTPMethod = a.ko.Spec.IntegrationHTTPMethod
+	}
 	if a.ko.Spec.RequestTemplates == nil && b.ko.Spec.RequestTemplates != nil {
 		a.ko.Spec.RequestTemplates = map[string]*string{}
 	} else if a.ko.Spec.RequestTemplates != nil && b.ko.Spec.RequestTemplates == nil {

@@ -132,3 +132,86 @@ func TestSdkFindIntegrationHTTPMethod(t *testing.T) {
 		})
 	}
 }
+
+func newTestIntegration(spec svcapitypes.IntegrationSpec) *resource {
+	spec.RestAPIID = aws.String("api-id")
+	spec.ResourceID = aws.String("resource-id")
+	return &resource{ko: &svcapitypes.Integration{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+		Spec:       spec,
+	}}
+}
+
+func TestDeltaIntegrationHTTPMethod(t *testing.T) {
+	for _, tt := range []struct {
+		description           string
+		integrationHTTPMethod *string
+		responseBody          string
+		expectDelta           bool
+	}{
+		{
+			description:           "case-only difference is not drift",
+			integrationHTTPMethod: aws.String("post"),
+			responseBody:          `{"type":"HTTP","httpMethod":"POST"}`,
+			expectDelta:           false,
+		},
+		{
+			description:           "unset desired value is unmanaged",
+			integrationHTTPMethod: nil,
+			responseBody:          `{"type":"HTTP","httpMethod":"POST"}`,
+			expectDelta:           false,
+		},
+		{
+			description:           "real backend method change is drift",
+			integrationHTTPMethod: aws.String("put"),
+			responseBody:          `{"type":"HTTP","httpMethod":"POST"}`,
+			expectDelta:           true,
+		},
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			rm := newTestResourceManager(&fakeHTTPClient{body: tt.responseBody})
+			desired := newTestIntegration(svcapitypes.IntegrationSpec{
+				HTTPMethod:            aws.String("GET"),
+				IntegrationHTTPMethod: tt.integrationHTTPMethod,
+				Type:                  aws.String("HTTP"),
+			})
+
+			latest, err := rm.sdkFind(context.Background(), desired)
+			require.NoError(t, err)
+
+			delta := newResourceDelta(desired, latest)
+			assert.Equal(t, tt.expectDelta, delta.DifferentAt("Spec.IntegrationHTTPMethod"))
+		})
+	}
+}
+
+// PutIntegration and UpdateIntegration also return the integration's HTTP
+// method in httpMethod. The write-back must keep the declared request method.
+func TestSdkCreateKeepsRequestHTTPMethod(t *testing.T) {
+	rm := newTestResourceManager(&fakeHTTPClient{body: `{"type":"MOCK"}`})
+	desired := newTestIntegration(svcapitypes.IntegrationSpec{
+		HTTPMethod: aws.String("OPTIONS"),
+		Type:       aws.String("MOCK"),
+	})
+
+	created, err := rm.sdkCreate(context.Background(), desired)
+	require.NoError(t, err)
+	assert.Equal(t, aws.String("OPTIONS"), created.ko.Spec.HTTPMethod)
+}
+
+func TestSdkUpdateKeepsRequestHTTPMethod(t *testing.T) {
+	rm := newTestResourceManager(&fakeHTTPClient{body: `{"type":"HTTP","httpMethod":"POST"}`})
+	spec := svcapitypes.IntegrationSpec{
+		HTTPMethod:            aws.String("GET"),
+		IntegrationHTTPMethod: aws.String("POST"),
+		Type:                  aws.String("HTTP"),
+		TimeoutInMillis:       aws.Int64(10000),
+	}
+	desired := newTestIntegration(spec)
+	spec.TimeoutInMillis = aws.Int64(29000)
+	latest := newTestIntegration(spec)
+
+	updated, err := rm.sdkUpdate(context.Background(), desired, latest, newResourceDelta(desired, latest))
+	require.NoError(t, err)
+	assert.Equal(t, aws.String("GET"), updated.ko.Spec.HTTPMethod)
+}

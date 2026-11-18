@@ -21,6 +21,7 @@ from functools import partial
 
 import boto3
 import pytest
+from acktest.k8s import condition
 from acktest.k8s import resource as k8s
 from acktest.resources import random_suffix_name
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, SERVICE_NAME, load_apigateway_resource
@@ -75,6 +76,89 @@ def simple_integration(simple_resource, apigateway_client) -> Tuple[k8s.CustomRe
     assert deleted
     wait_until_deleted(partial(apigateway_client.get_integration, **resource_query))
     apigateway_client.delete_method(**resource_query)
+
+
+def _create_integration(simple_resource, apigateway_client, template, http_method):
+    integration_name = random_suffix_name('integration', 32)
+
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements['INTEGRATION_NAME'] = integration_name
+    (_, resource_cr, rest_api_cr, resource_query) = simple_resource
+    replacements['REST_API_REF_NAME'] = rest_api_cr['metadata']['name']
+    replacements['RESOURCE_REF_NAME'] = resource_cr['metadata']['name']
+
+    resource_data = load_apigateway_resource(template, additional_replacements=replacements)
+    logging.debug(resource_data)
+    resource_query = {**resource_query, 'httpMethod': http_method}
+    apigateway_client.put_method(**resource_query, authorizationType='NONE')
+
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, INTEGRATION_RESOURCE_PLURAL,
+        integration_name, namespace='default',
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    cr = k8s.wait_resource_consumed_by_controller(ref, wait_periods=60)
+    assert cr is not None
+    return ref, resource_query
+
+
+def _delete_integration(ref, resource_query, apigateway_client):
+    _, deleted = k8s.delete_custom_resource(ref, 10, 30)
+    assert deleted
+    wait_until_deleted(partial(apigateway_client.get_integration, **resource_query))
+    apigateway_client.delete_method(**resource_query)
+
+
+@pytest.fixture(scope='module')
+def http_backend_method_integration(simple_resource, apigateway_client):
+    ref, resource_query = _create_integration(
+        simple_resource, apigateway_client, 'integration_http_backend_method', 'PUT')
+    yield ref, resource_query
+    _delete_integration(ref, resource_query, apigateway_client)
+
+
+@pytest.fixture(scope='module')
+def mock_integration(simple_resource, apigateway_client):
+    ref, resource_query = _create_integration(
+        simple_resource, apigateway_client, 'integration_mock', 'OPTIONS')
+    yield ref, resource_query
+    _delete_integration(ref, resource_query, apigateway_client)
+
+
+def _assert_synced(ref):
+    assert k8s.wait_on_condition(
+        ref, condition.CONDITION_TYPE_RESOURCE_SYNCED, "True", wait_periods=10)
+
+
+@service_marker
+class TestIntegrationHTTPMethod:
+    def test_backend_method_differs_from_request_method(self, http_backend_method_integration, apigateway_client):
+        (ref, resource_query) = http_backend_method_integration
+        get_integration = partial(apigateway_client.get_integration, **resource_query)
+
+        _assert_synced(ref)
+        assert get_integration()['httpMethod'] == 'POST'
+
+        k8s.patch_custom_resource(ref, {'spec': {'timeoutInMillis': 2000}})
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        _assert_synced(ref)
+        aws_resource = get_integration()
+        assert aws_resource['timeoutInMillis'] == 2000
+        assert aws_resource['httpMethod'] == 'POST'
+
+    def test_mock_integration(self, mock_integration, apigateway_client):
+        (ref, resource_query) = mock_integration
+        get_integration = partial(apigateway_client.get_integration, **resource_query)
+
+        _assert_synced(ref)
+
+        request_templates = {'application/json': '{"statusCode": 204}'}
+        k8s.patch_custom_resource(ref, {'spec': {'requestTemplates': request_templates}})
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        _assert_synced(ref)
+        assert get_integration()['requestTemplates'] == request_templates
 
 
 @service_marker
